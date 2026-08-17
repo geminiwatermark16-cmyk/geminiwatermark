@@ -138,7 +138,7 @@ module.exports = async function handler(req, res) {
       row.orderId.startsWith('gw_')
       && row.amount === PLAN_AMOUNT
       && row.currency === PLAN_CURRENCY
-      && (row.status === 'SUCCESS' || row.status === 'PAID' || row.eventType.includes('PAYMENT'))
+      && (row.status === 'SUCCESS' || row.status === 'PAID')
     );
 
     const byOrder = new Map();
