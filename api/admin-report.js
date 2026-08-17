@@ -101,6 +101,8 @@ function normalize(item) {
 async function fetchRecon(startDate, endDate) {
   const all = [];
   let cursor = null;
+  let environment = null;
+
   for (let page = 0; page < 5; page += 1) {
     const response = await cashfreeRequest('/recon', {
       method: 'POST',
@@ -109,12 +111,14 @@ async function fetchRecon(startDate, endDate) {
         filters: { start_date: startDate, end_date: endDate },
       }),
     });
+    environment = response.__cashfreeEnvironment || environment;
     const rows = Array.isArray(response?.data) ? response.data : [];
     all.push(...rows);
     cursor = response?.cursor || null;
     if (!cursor || rows.length === 0) break;
   }
-  return all;
+
+  return { rows: all, environment };
 }
 
 module.exports = async function handler(req, res) {
@@ -133,8 +137,8 @@ module.exports = async function handler(req, res) {
   const start = new Date(end.getTime() - (32 * 24 * 60 * 60 * 1000));
 
   try {
-    const raw = await fetchRecon(start.toISOString(), end.toISOString());
-    const normalized = raw.map(normalize).filter((row) =>
+    const recon = await fetchRecon(start.toISOString(), end.toISOString());
+    const normalized = recon.rows.map(normalize).filter((row) =>
       row.orderId.startsWith('gw_')
       && row.amount === PLAN_AMOUNT
       && row.currency === PLAN_CURRENCY
@@ -168,6 +172,9 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       range: { start: start.toISOString(), end: end.toISOString() },
+      cashfree: {
+        environment: recon.environment || 'unknown',
+      },
       summary: {
         paidOrders: purchases.length,
         clients: uniqueClients.size,
@@ -186,6 +193,15 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     console.error(error);
+
+    if (error?.code === 'CASHFREE_AUTH_FAILED' || error?.status === 401) {
+      return res.status(502).json({
+        ok: false,
+        code: 'CASHFREE_AUTH_FAILED',
+        error: 'Cashfree API authentication failed. Update the Vercel CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET with the Payment Gateway API keys from the same Cashfree merchant account, then redeploy.',
+      });
+    }
+
     return res.status(502).json({
       ok: false,
       error: 'Could not load Cashfree reconciliation right now.',
