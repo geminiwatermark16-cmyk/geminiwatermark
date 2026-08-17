@@ -57,11 +57,13 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify(body),
     });
 
+    const actualEnvironment = order.__cashfreeEnvironment || (isSandbox() ? 'sandbox' : 'production');
+
     return res.status(200).json({
       ok: true,
       orderId: order.order_id,
       paymentSessionId: order.payment_session_id,
-      mode: isSandbox() ? 'sandbox' : 'production',
+      mode: actualEnvironment === 'sandbox' ? 'sandbox' : 'production',
       amount: PLAN_AMOUNT,
       currency: PLAN_CURRENCY,
       durationDays: PLAN_DURATION_DAYS,
