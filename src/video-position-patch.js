@@ -7,13 +7,13 @@ function patchCurrentGeminiVideoPositions(engine) {
   const catalog = engine?.GEMINI_DIAMOND_VIDEO_CATALOG;
   if (!catalog) return false;
 
-  // Calibrated from the current 1080x1920 Gemini story sample that was still
-  // showing the visible diamond after the previous compatibility patch.
-  // The active mark begins around x=868/y=1632 in the source frame.
+  // Verified from the user's actual 1080x1920 sample. The 96x96 visible
+  // Gemini diamond begins at x=856/y=1696. Keep the first reverse-alpha pass
+  // aligned to that box; the second pass only removes any residual outline.
   const portrait = catalog['1080x1920'];
   if (portrait?.watermark?.width === 96 && portrait?.watermark?.height === 96) {
-    portrait.position.x = 868;
-    portrait.position.y = 1632;
+    portrait.position.x = 856;
+    portrait.position.y = 1696;
   }
 
   const landscape = catalog['1920x1080'];
@@ -45,8 +45,6 @@ for (const url of ENGINE_URLS) {
   }
 }
 
-if (!patched) {
-  console.warn('Gemini video position patch could not be applied.', lastError);
-}
+if (!patched) console.warn('Gemini video position patch could not be applied.', lastError);
 
 export { patched };
