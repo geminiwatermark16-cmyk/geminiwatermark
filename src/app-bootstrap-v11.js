@@ -1,8 +1,9 @@
-// v13: load the existing app/account/payment runtime first.
+// v14: load the existing app/account/payment runtime first.
 await import('./runtime-loader.js?v=20260818-13');
 
-// Pure-browser story cleaner: no OpenCV download/runtime wait.
-await import('./video-clean-v13.js?v=20260818-13');
+// Pure-browser story cleaner with texture restore, edge feathering and safe
+// temporal stabilization. No OpenCV/WASM dependency.
+await import('./video-clean-v13.js?v=20260818-14');
 
 if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
   const pureCleaner = window.__GW_PURE_CLEAN_STORY_VIDEO__;
@@ -14,7 +15,7 @@ if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
     const title = document.getElementById('processingTitle');
     const sub = document.getElementById('processingSub');
     if (title) title.textContent = 'Removing Gemini diamond…';
-    if (sub) sub.textContent = 'Local content-aware cleanup · no OpenCV wait';
+    if (sub) sub.textContent = 'Texture-aware cleanup · smoothing artifacts';
 
     let timer;
     try {
@@ -29,5 +30,5 @@ if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
     }
   };
 
-  window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v13-watchdog';
+  window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v14-texture-smooth-watchdog';
 }
