@@ -3,6 +3,9 @@ const MASK_CENTER = { x: 68, y: 68 };
 const STAR_OUTER_RADIUS = 58;
 const STAR_INNER_RADIUS = 23;
 const INPAINT_RADIUS = 5;
+const TEMPORAL_MAX_DIFF = 24;
+const TEMPORAL_MAX_BLEND = 0.14;
+const TEXTURE_STRENGTH = 0.34;
 
 function waitForEvent(target, event, timeoutMs, errorMessage) {
   return new Promise((resolve, reject) => {
@@ -85,6 +88,15 @@ function createBinaryStarMask() {
 const STAR_MASK = createBinaryStarMask();
 let purePlan;
 
+function smoothstep(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function getPurePlan() {
   if (purePlan) return purePlan;
   const { width, height } = STORY_ROI;
@@ -122,6 +134,9 @@ function getPurePlan() {
   for (let i = 0; i < size; i++) if (STAR_MASK[i]) order.push(i);
   order.sort((a, b) => distance[a] - distance[b]);
 
+  const donorAngles = Array.from({ length: 16 }, (_, index) => index * Math.PI / 8);
+  const donorRadii = [8, 12, 16, 22, 30, 40, 50, 60, 66];
+
   const entries = order.map((i) => {
     const x = i % width;
     const y = Math.floor(i / width);
@@ -151,11 +166,46 @@ function getPurePlan() {
     }
 
     if (total > 0) for (const item of neighbors) item[1] /= total;
-    return { index: i, neighbors };
+
+    const donors = [];
+    const seen = new Set();
+    for (const radius of donorRadii) {
+      for (const angle of donorAngles) {
+        const xx = Math.round(x + Math.cos(angle) * radius);
+        const yy = Math.round(y + Math.sin(angle) * radius);
+        if (xx < 2 || yy < 2 || xx >= width - 2 || yy >= height - 2) continue;
+        const n = yy * width + xx;
+        if (STAR_MASK[n] || seen.has(n)) continue;
+        seen.add(n);
+        donors.push(n);
+        if (donors.length >= 12) break;
+      }
+      if (donors.length >= 12) break;
+    }
+
+    return {
+      index: i,
+      neighbors,
+      donors,
+      feather: 0.94 + 0.06 * smoothstep((distance[i] - 1) / 5),
+    };
   });
 
   purePlan = { entries, width, height };
   return purePlan;
+}
+
+function localAverage(source, index, width, channel) {
+  const offsets = [-width, -1, 1, width];
+  let sum = source[index * 4 + channel] * 2;
+  let count = 2;
+  for (const offset of offsets) {
+    const n = index + offset;
+    if (n < 0 || n >= width * STORY_ROI.height) continue;
+    sum += source[n * 4 + channel];
+    count++;
+  }
+  return sum / count;
 }
 
 function pureJsInpaint(imageData) {
@@ -180,20 +230,99 @@ function pureJsInpaint(imageData) {
     }
   }
 
+  for (const entry of plan.entries) {
+    const { index, donors, feather } = entry;
+    if (!donors.length) continue;
+
+    const baseR = channels[0][index];
+    const baseG = channels[1][index];
+    const baseB = channels[2][index];
+    const baseLuma = baseR * 0.2126 + baseG * 0.7152 + baseB * 0.0722;
+
+    let best = -1;
+    let bestScore = Infinity;
+    let loR = 255, loG = 255, loB = 255;
+    let hiR = 0, hiG = 0, hiB = 0;
+
+    for (const donor of donors) {
+      const r = source[donor * 4];
+      const g = source[donor * 4 + 1];
+      const b = source[donor * 4 + 2];
+      loR = Math.min(loR, r); loG = Math.min(loG, g); loB = Math.min(loB, b);
+      hiR = Math.max(hiR, r); hiG = Math.max(hiG, g); hiB = Math.max(hiB, b);
+      const luma = r * 0.2126 + g * 0.7152 + b * 0.0722;
+      const colorDistance = Math.abs(r - baseR) + Math.abs(g - baseG) + Math.abs(b - baseB);
+      const score = Math.abs(luma - baseLuma) * 2 + colorDistance * 0.12;
+      if (score < bestScore) {
+        bestScore = score;
+        best = donor;
+      }
+    }
+
+    if (best < 0) continue;
+
+    const values = [baseR, baseG, baseB];
+    const lows = [loR, loG, loB];
+    const highs = [hiR, hiG, hiB];
+    for (let c = 0; c < 3; c++) {
+      const donorValue = source[best * 4 + c];
+      const donorMean = localAverage(source, best, plan.width, c);
+      const detail = donorValue - donorMean;
+      const textured = values[c] + detail * TEXTURE_STRENGTH;
+      const clamped = clamp(textured, lows[c] - 12, highs[c] + 12);
+      const original = source[index * 4 + c];
+      channels[c][index] = clamped * feather + original * (1 - feather);
+    }
+  }
+
   for (let i = 0; i < STAR_MASK.length; i++) {
     if (!STAR_MASK[i]) continue;
-    result[i * 4] = Math.max(0, Math.min(255, Math.round(channels[0][i])));
-    result[i * 4 + 1] = Math.max(0, Math.min(255, Math.round(channels[1][i])));
-    result[i * 4 + 2] = Math.max(0, Math.min(255, Math.round(channels[2][i])));
+    result[i * 4] = clamp(Math.round(channels[0][i]), 0, 255);
+    result[i * 4 + 1] = clamp(Math.round(channels[1][i]), 0, 255);
+    result[i * 4 + 2] = clamp(Math.round(channels[2][i]), 0, 255);
     result[i * 4 + 3] = 255;
   }
   return new ImageData(result, plan.width, plan.height);
 }
 
-function cleanFrame(ctx) {
+function stabilizeTemporal(current, previous) {
+  if (!previous || previous.length !== current.data.length) {
+    return new Uint8ClampedArray(current.data);
+  }
+
+  const data = current.data;
+  for (let i = 0; i < STAR_MASK.length; i++) {
+    if (!STAR_MASK[i]) continue;
+    const p = i * 4;
+    const diff = (
+      Math.abs(data[p] - previous[p]) +
+      Math.abs(data[p + 1] - previous[p + 1]) +
+      Math.abs(data[p + 2] - previous[p + 2])
+    ) / 3;
+    if (diff >= TEMPORAL_MAX_DIFF) continue;
+    const weight = TEMPORAL_MAX_BLEND * (1 - diff / TEMPORAL_MAX_DIFF);
+    data[p] = Math.round(data[p] * (1 - weight) + previous[p] * weight);
+    data[p + 1] = Math.round(data[p + 1] * (1 - weight) + previous[p + 1] * weight);
+    data[p + 2] = Math.round(data[p + 2] * (1 - weight) + previous[p + 2] * weight);
+  }
+  return new Uint8ClampedArray(data);
+}
+
+function cleanFrame(ctx, temporalState, mediaTime) {
   const { x, y, width, height } = STORY_ROI;
   const imageData = ctx.getImageData(x, y, width, height);
-  ctx.putImageData(pureJsInpaint(imageData), x, y);
+  const cleaned = pureJsInpaint(imageData);
+
+  const isNewFrame = !Number.isFinite(temporalState.lastTime) || Math.abs(mediaTime - temporalState.lastTime) > 0.001;
+  if (isNewFrame) {
+    temporalState.previous = stabilizeTemporal(cleaned, temporalState.previous);
+    cleaned.data.set(temporalState.previous);
+    temporalState.lastTime = mediaTime;
+  } else if (temporalState.previous) {
+    cleaned.data.set(temporalState.previous);
+  }
+
+  ctx.putImageData(cleaned, x, y);
 }
 
 function safeStopRecorder(recorder) {
@@ -207,7 +336,7 @@ export async function pureJsCleanStoryVideo(inputBlob, options = {}) {
   if (!(inputBlob instanceof Blob) || inputBlob.size === 0) return inputBlob;
   if (!('MediaRecorder' in window)) throw new Error('Video cleanup requires current Chrome or Edge.');
 
-  window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v13';
+  window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v14-texture-smooth';
   const url = URL.createObjectURL(inputBlob);
   const video = document.createElement('video');
   video.src = url;
@@ -244,6 +373,7 @@ export async function pureJsCleanStoryVideo(inputBlob, options = {}) {
     if (!ctx) throw new Error('Canvas video processing is unavailable.');
 
     getPurePlan();
+    const temporalState = { previous: null, lastTime: NaN };
 
     const fps = 24;
     canvasStream = canvas.captureStream(fps);
@@ -273,7 +403,7 @@ export async function pureJsCleanStoryVideo(inputBlob, options = {}) {
 
     const drawClean = () => {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      cleanFrame(ctx);
+      cleanFrame(ctx, temporalState, video.currentTime);
       if (typeof options.onProgress === 'function' && Number.isFinite(video.duration) && video.duration > 0) {
         options.onProgress(Math.min(0.99, Math.max(0.02, video.currentTime / video.duration)));
       }
