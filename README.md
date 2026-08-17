@@ -56,3 +56,5 @@ A plain `python3 -m http.server` can preview the UI, but Cashfree API routes req
 
 ## Important limitation
 The 21-free-video quota is currently tracked per browser. A user can reset browser storage to reset that quota. Existing browsers that had already used the old one-video trial are migrated as having used 1 of 21 videos. If you need strict 21-free-video enforcement across browsers/devices, add login + a server-side database/usage ledger.
+
+<!-- deploy-trigger: 2026-08-18T01:42+05:30 -->
