@@ -2,6 +2,12 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/blog", "destination": "/blog.html" },
+    { "source": "/blog/clean-ai-video-without-cropping", "destination": "/blog/clean-ai-video-without-cropping.html" },
+    { "source": "/blog/why-watermark-remains-after-export", "destination": "/blog/why-watermark-remains-after-export.html" },
+    { "source": "/blog/visible-watermark-vs-synthid", "destination": "/blog/visible-watermark-vs-synthid.html" },
+    { "source": "/blog/mp4-vs-webm-ai-video", "destination": "/blog/mp4-vs-webm-ai-video.html" },
+    { "source": "/blog/clean-already-exported-ai-video", "destination": "/blog/clean-already-exported-ai-video.html" },
     { "source": "/remove-gemini-watermark", "destination": "/remove-gemini-watermark.html" },
     { "source": "/gemini-video-watermark-remover", "destination": "/gemini-video-watermark-remover.html" },
     { "source": "/veo-watermark-remover", "destination": "/veo-watermark-remover.html" },
