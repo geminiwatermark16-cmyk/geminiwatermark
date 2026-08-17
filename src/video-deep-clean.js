@@ -1,7 +1,7 @@
 function waitFor(target, event) {
   return new Promise((resolve, reject) => {
     const onEvent = () => { cleanup(); resolve(); };
-    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for deep cleanup.')); };
+    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for seamless cleanup.')); };
     const cleanup = () => {
       target.removeEventListener(event, onEvent);
       target.removeEventListener('error', onError);
@@ -20,38 +20,81 @@ function recorderMime() {
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
-function makeBlurredPatch(sourceCanvas, x, y, width, height) {
-  const pad = 70;
-  const sx = Math.max(0, x - pad);
-  const sy = Math.max(0, y - pad);
-  const sw = Math.min(sourceCanvas.width - sx, width + pad * 2);
-  const sh = Math.min(sourceCanvas.height - sy, height + pad * 2);
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
-  const raw = document.createElement('canvas');
-  raw.width = sw;
-  raw.height = sh;
-  const rawCtx = raw.getContext('2d', { alpha: false });
-  rawCtx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+function smoothstep(edge0, edge1, value) {
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
 
-  const blurred = document.createElement('canvas');
-  blurred.width = sw;
-  blurred.height = sh;
-  const blurCtx = blurred.getContext('2d', { alpha: false });
-  blurCtx.filter = 'blur(34px)';
-  blurCtx.drawImage(raw, 0, 0);
-  blurCtx.filter = 'blur(18px)';
-  blurCtx.globalAlpha = 0.82;
-  blurCtx.drawImage(blurred, 0, 0);
-  blurCtx.globalAlpha = 1;
-  blurCtx.filter = 'none';
+function readPixel(data, width, x, y, channel) {
+  const px = clamp(Math.round(x), 0, width - 1);
+  const height = data.length / 4 / width;
+  const py = clamp(Math.round(y), 0, height - 1);
+  return data[(py * width + px) * 4 + channel];
+}
 
-  return {
-    canvas: blurred,
-    cropX: x - sx,
-    cropY: y - sy,
-    width,
-    height,
-  };
+/**
+ * Reconstruct only the Gemini diamond area from its surrounding clean pixels.
+ * Unlike the previous blur-box fallback, this uses a feathered diamond mask,
+ * so no rectangular patch is painted over the video.
+ */
+function seamlessDiamondInpaint(ctx, canvas) {
+  const region = { x: 858, y: 1622, width: 116, height: 116 };
+  const pad = 34;
+  const sx = Math.max(0, region.x - pad);
+  const sy = Math.max(0, region.y - pad);
+  const sw = Math.min(canvas.width - sx, region.width + pad * 2);
+  const sh = Math.min(canvas.height - sy, region.height + pad * 2);
+
+  const source = ctx.getImageData(sx, sy, sw, sh);
+  const target = ctx.getImageData(region.x, region.y, region.width, region.height);
+  const sourceData = source.data;
+  const out = target.data;
+
+  const localX = region.x - sx;
+  const localY = region.y - sy;
+  const leftSampleX = localX - 16;
+  const rightSampleX = localX + region.width + 16;
+  const topSampleY = localY - 16;
+  const bottomSampleY = localY + region.height + 16;
+
+  for (let y = 0; y < region.height; y++) {
+    const ny = ((y + 0.5) - region.height / 2) / (region.height / 2);
+    const fy = region.height > 1 ? y / (region.height - 1) : 0.5;
+
+    for (let x = 0; x < region.width; x++) {
+      const nx = ((x + 0.5) - region.width / 2) / (region.width / 2);
+      const diamondDistance = Math.abs(nx) + Math.abs(ny);
+
+      // Full replacement over the actual ~96px diamond, then feather softly
+      // into the untouched frame. The 116px working region provides margin.
+      const mask = 1 - smoothstep(0.78, 1.04, diamondDistance);
+      if (mask <= 0.001) continue;
+
+      const fx = region.width > 1 ? x / (region.width - 1) : 0.5;
+      const srcY = localY + y;
+      const srcX = localX + x;
+      const outIndex = (y * region.width + x) * 4;
+
+      for (let c = 0; c < 3; c++) {
+        const left = readPixel(sourceData, sw, leftSampleX, srcY, c);
+        const right = readPixel(sourceData, sw, rightSampleX, srcY, c);
+        const top = readPixel(sourceData, sw, srcX, topSampleY, c);
+        const bottom = readPixel(sourceData, sw, srcX, bottomSampleY, c);
+
+        const horizontal = left + (right - left) * fx;
+        const vertical = top + (bottom - top) * fy;
+        const reconstructed = horizontal * 0.5 + vertical * 0.5;
+        const original = out[outIndex + c];
+        out[outIndex + c] = Math.round(original * (1 - mask) + reconstructed * mask);
+      }
+    }
+  }
+
+  ctx.putImageData(target, region.x, region.y);
 }
 
 export async function deepCleanStoryVideo(inputBlob, options = {}) {
@@ -74,15 +117,12 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     await waitFor(video, 'loadedmetadata');
     const width = video.videoWidth;
     const height = video.videoHeight;
-
-    // Current Gemini/Veo 9:16 story sample: keep original dimensions and
-    // apply a wide, feathered second pass around the bottom-right diamond.
     if (width !== 1080 || height !== 1920) return inputBlob;
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
 
     const fps = 30;
     const canvasStream = canvas.captureStream(fps);
@@ -107,26 +147,12 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     let stopResolve;
     const stopped = new Promise((resolve) => { stopResolve = resolve; });
     recorder.onstop = () => stopResolve();
-
-    const region = { x: 810, y: 1570, width: 220, height: 240 };
     let cancelled = false;
 
     const render = () => {
       if (cancelled) return;
       ctx.drawImage(video, 0, 0, width, height);
-
-      const patch = makeBlurredPatch(canvas, region.x, region.y, region.width, region.height);
-      ctx.drawImage(
-        patch.canvas,
-        patch.cropX,
-        patch.cropY,
-        patch.width,
-        patch.height,
-        region.x,
-        region.y,
-        region.width,
-        region.height
-      );
+      seamlessDiamondInpaint(ctx, canvas);
 
       if (Number.isFinite(video.duration) && video.duration > 0 && typeof options.onProgress === 'function') {
         options.onProgress(Math.min(1, video.currentTime / video.duration));
@@ -139,6 +165,7 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     };
 
     ctx.drawImage(video, 0, 0, width, height);
+    seamlessDiamondInpaint(ctx, canvas);
     recorder.start(250);
     await video.play();
     if (typeof video.requestVideoFrameCallback === 'function') video.requestVideoFrameCallback(render);
@@ -153,7 +180,7 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     const output = new Blob(chunks, { type: type.split(';')[0] });
     return output.size ? output : inputBlob;
   } catch (error) {
-    console.warn('Deep-clean fallback skipped:', error);
+    console.warn('Seamless cleanup fallback skipped:', error);
     return inputBlob;
   } finally {
     video.pause();
