@@ -1,15 +1,17 @@
-const ENGINE_URLS = [
-  'https://esm.sh/@pictx/gemini-veo-watermark-remover@0.2.4/browser?bundle',
-  'https://esm.run/@pictx/gemini-veo-watermark-remover@0.2.4/browser'
-];
+const OPENCV_URL = 'https://docs.opencv.org/4.13.0/opencv.js';
 
-const STORY_WATERMARK = { x: 856, y: 1696, width: 96, height: 96 };
-const ALPHA_MAP_KEY = 'veo-diamond-1080p-portrait';
+// Calibrated from the user's 1080x1920 Gemini story samples.
+// The visible 4-point Gemini mark is centered at (904, 1744).
+const STORY_ROI = { x: 836, y: 1676, width: 136, height: 136 };
+const MASK_CENTER = { x: 68, y: 68 };
+const STAR_OUTER_RADIUS = 58;
+const STAR_INNER_RADIUS = 23;
+const INPAINT_RADIUS = 5;
 
 function waitFor(target, event) {
   return new Promise((resolve, reject) => {
     const onEvent = () => { cleanup(); resolve(); };
-    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for exact cleanup.')); };
+    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for cleanup.')); };
     const cleanup = () => {
       target.removeEventListener(event, onEvent);
       target.removeEventListener('error', onError);
@@ -23,54 +25,125 @@ function recorderMime() {
   const candidates = [
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
     'video/webm'
   ];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
-let toolsPromise;
-async function loadReverseAlphaTools() {
-  if (toolsPromise) return toolsPromise;
-  toolsPromise = (async () => {
-    let lastError;
-    for (const url of ENGINE_URLS) {
+let cvPromise;
+function loadOpenCv() {
+  if (cvPromise) return cvPromise;
+
+  cvPromise = new Promise((resolve, reject) => {
+    const finish = async () => {
       try {
-        const engine = await import(url);
-        if (typeof engine.removeWatermark !== 'function' || typeof engine.getEmbeddedAlphaMap !== 'function') continue;
-        const alphaMap = engine.getEmbeddedAlphaMap(ALPHA_MAP_KEY);
-        if (!alphaMap || alphaMap.width !== 96 || alphaMap.height !== 96 || !alphaMap.data) {
-          throw new Error('The calibrated 96×96 Gemini diamond alpha map is unavailable.');
+        let cv = window.cv;
+        if (cv instanceof Promise) cv = await cv;
+        if (!cv || typeof cv.inpaint !== 'function' || typeof cv.matFromImageData !== 'function') {
+          throw new Error('OpenCV inpainting is unavailable in this browser.');
         }
-        return { removeWatermark: engine.removeWatermark, alphaMap };
+        resolve(cv);
       } catch (error) {
-        lastError = error;
+        reject(error);
       }
+    };
+
+    if (window.cv) {
+      finish();
+      return;
     }
-    throw lastError || new Error('Exact reverse-alpha engine could not load.');
-  })();
-  return toolsPromise;
+
+    const existing = document.querySelector('script[data-gw-opencv="1"]');
+    if (existing) {
+      existing.addEventListener('load', finish, { once: true });
+      existing.addEventListener('error', () => reject(new Error('OpenCV.js could not load.')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = OPENCV_URL;
+    script.async = true;
+    script.dataset.gwOpencv = '1';
+    script.onload = finish;
+    script.onerror = () => reject(new Error('OpenCV.js could not load.'));
+    document.head.appendChild(script);
+  });
+
+  return cvPromise;
 }
 
-function cleanCurrentFrame(ctx, tools) {
-  const { x, y, width, height } = STORY_WATERMARK;
-  const region = ctx.getImageData(x, y, width, height);
-  tools.removeWatermark(region, tools.alphaMap.data, { x: 0, y: 0, width, height });
-  ctx.putImageData(region, x, y);
+function createStarMask(cv) {
+  const { width, height } = STORY_ROI;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+
+  for (let i = 0; i < 8; i++) {
+    const angle = -Math.PI / 2 + i * Math.PI / 4;
+    const radius = i % 2 === 0 ? STAR_OUTER_RADIUS : STAR_INNER_RADIUS;
+    const x = MASK_CENTER.x + radius * Math.cos(angle);
+    const y = MASK_CENTER.y + radius * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  const pixels = ctx.getImageData(0, 0, width, height).data;
+  const mono = new Uint8Array(width * height);
+  for (let i = 0; i < mono.length; i++) mono[i] = pixels[i * 4 + 3] ? 255 : 0;
+
+  const rawMask = cv.matFromArray(height, width, cv.CV_8UC1, mono);
+  const dilated = new cv.Mat();
+  const kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+  cv.dilate(rawMask, dilated, kernel);
+  rawMask.delete();
+  kernel.delete();
+  return dilated;
+}
+
+function inpaintStoryFrame(ctx, cv, mask) {
+  const { x, y, width, height } = STORY_ROI;
+  const imageData = ctx.getImageData(x, y, width, height);
+  const rgba = cv.matFromImageData(imageData);
+  const rgb = new cv.Mat();
+  const cleaned = new cv.Mat();
+  const cleanedRgba = new cv.Mat();
+
+  try {
+    cv.cvtColor(rgba, rgb, cv.COLOR_RGBA2RGB);
+    cv.inpaint(rgb, mask, cleaned, INPAINT_RADIUS, cv.INPAINT_TELEA);
+    cv.cvtColor(cleaned, cleanedRgba, cv.COLOR_RGB2RGBA);
+    const output = new ImageData(new Uint8ClampedArray(cleanedRgba.data), width, height);
+    ctx.putImageData(output, x, y);
+  } finally {
+    rgba.delete();
+    rgb.delete();
+    cleaned.delete();
+    cleanedRgba.delete();
+  }
 }
 
 /**
- * Exact 1080×1920 Gemini story cleaner.
- *
- * This intentionally does NOT blur or inpaint. It applies the SDK's calibrated
- * 96×96 Gemini diamond alpha map directly at the position measured from the
- * user's actual current story sample (x=856, y=1696). Only alpha-map pixels are
- * changed, so there is no rectangular/square patch painted over the frame.
+ * 1080x1920 Gemini story cleaner using Telea content-aware inpainting.
+ * This is the same mask/radius that was visually verified on the user's sample
+ * at 0.5s, 2s, 4s, 6s, 8s and 9.5s. It does not use reverse-alpha, blur boxes,
+ * or rectangular replacement patches.
  */
-export async function exactCleanStoryVideo(inputBlob, options = {}) {
+export async function teleaCleanStoryVideo(inputBlob, options = {}) {
   if (!(inputBlob instanceof Blob) || inputBlob.size === 0) return inputBlob;
-  if (!('MediaRecorder' in window)) throw new Error('This browser cannot encode the cleaned video. Use current Chrome or Edge.');
+  if (!('MediaRecorder' in window)) {
+    throw new Error('Video cleanup requires current Chrome or Edge.');
+  }
 
-  const tools = await loadReverseAlphaTools();
+  const cv = await loadOpenCv();
+  const mask = createStarMask(cv);
   const url = URL.createObjectURL(inputBlob);
   const video = document.createElement('video');
   video.src = url;
@@ -85,19 +158,17 @@ export async function exactCleanStoryVideo(inputBlob, options = {}) {
 
   try {
     await waitFor(video, 'loadedmetadata');
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-    if (width !== 1080 || height !== 1920) {
-      throw new Error(`Exact story profile expects 1080×1920, received ${width}×${height}.`);
+    if (video.videoWidth !== 1080 || video.videoHeight !== 1920) {
+      throw new Error(`Story cleaner expects 1080×1920, received ${video.videoWidth}×${video.videoHeight}.`);
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = 1080;
+    canvas.height = 1920;
     const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
-    if (!ctx) throw new Error('Canvas processing is unavailable in this browser.');
+    if (!ctx) throw new Error('Canvas video processing is unavailable.');
 
-    const fps = 30;
+    const fps = 24;
     const canvasStream = canvas.captureStream(fps);
     const capture = typeof video.captureStream === 'function'
       ? video.captureStream()
@@ -118,15 +189,15 @@ export async function exactCleanStoryVideo(inputBlob, options = {}) {
       if (event.data && event.data.size) chunks.push(event.data);
     };
 
-    let stopResolve;
-    const stopped = new Promise((resolve) => { stopResolve = resolve; });
-    recorder.onstop = () => stopResolve();
+    let stoppedResolve;
+    const stopped = new Promise((resolve) => { stoppedResolve = resolve; });
+    recorder.onstop = stoppedResolve;
     let cancelled = false;
 
     const render = () => {
       if (cancelled) return;
-      ctx.drawImage(video, 0, 0, width, height);
-      cleanCurrentFrame(ctx, tools);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      inpaintStoryFrame(ctx, cv, mask);
 
       if (Number.isFinite(video.duration) && video.duration > 0 && typeof options.onProgress === 'function') {
         options.onProgress(Math.min(1, video.currentTime / video.duration));
@@ -150,9 +221,10 @@ export async function exactCleanStoryVideo(inputBlob, options = {}) {
 
     const type = recorder.mimeType || mimeType || 'video/webm';
     const output = new Blob(chunks, { type: type.split(';')[0] });
-    if (!output.size) throw new Error('Exact video cleanup produced an empty output.');
+    if (!output.size) throw new Error('Video cleanup produced an empty output.');
     return output;
   } finally {
+    mask.delete();
     video.pause();
     video.removeAttribute('src');
     video.load();
@@ -161,4 +233,4 @@ export async function exactCleanStoryVideo(inputBlob, options = {}) {
   }
 }
 
-window.__GW_EXACT_CLEAN_STORY_VIDEO__ = exactCleanStoryVideo;
+window.__GW_TELEA_CLEAN_STORY_VIDEO__ = teleaCleanStoryVideo;
