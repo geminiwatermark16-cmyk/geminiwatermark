@@ -1,0 +1,9 @@
+{
+  "name": "geminiwatermark-space",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Gemini/Veo visible watermark remover with Cashfree ₹99 video upgrade",
+  "scripts": {
+    "check": "node --check src/main.js && node --check api/create-order.js && node --check api/verify-order.js && node --check api/verify-entitlement.js && node --check lib/cashfree.js"
+  }
+}
