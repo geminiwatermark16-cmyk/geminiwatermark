@@ -1,12 +1,33 @@
-// v12: wait for the complete OpenCV wasm runtime before using cv.inpaint,
-// with a local JavaScript fallback if OpenCV cannot initialize.
-await import('./video-deep-clean.js?v=20260818-12');
+// v13: load the existing app/account/payment runtime first.
+await import('./runtime-loader.js?v=20260818-13');
 
-// Keep the existing account, pricing and Cashfree runtime intact.
-await import('./runtime-loader.js?v=20260818-10');
+// Pure-browser story cleaner: no OpenCV download/runtime wait.
+await import('./video-clean-v13.js?v=20260818-13');
 
-// runtime-loader v10 calls this compatibility hook for 1080x1920 diamond clips.
-if (typeof window.__GW_TELEA_CLEAN_STORY_VIDEO__ === 'function') {
-  window.__GW_EXACT_CLEAN_STORY_VIDEO__ = window.__GW_TELEA_CLEAN_STORY_VIDEO__;
-  if (!window.__GW_ACTIVE_VIDEO_CLEANER__) window.__GW_ACTIVE_VIDEO_CLEANER__ = 'telea-v12-ready';
+if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
+  const pureCleaner = window.__GW_PURE_CLEAN_STORY_VIDEO__;
+
+  // runtime-loader calls this hook for supported 1080x1920 Gemini diamond clips.
+  // The outer timeout guarantees the UI can never spin forever even if a
+  // browser media event fails to arrive.
+  window.__GW_EXACT_CLEAN_STORY_VIDEO__ = async (blob, options = {}) => {
+    const title = document.getElementById('processingTitle');
+    const sub = document.getElementById('processingSub');
+    if (title) title.textContent = 'Removing Gemini diamond…';
+    if (sub) sub.textContent = 'Local content-aware cleanup · no OpenCV wait';
+
+    let timer;
+    try {
+      return await Promise.race([
+        pureCleaner(blob, options),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error('Video cleanup timed out. Please retry once.')), 45000);
+        })
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  };
+
+  window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v13-watchdog';
 }
