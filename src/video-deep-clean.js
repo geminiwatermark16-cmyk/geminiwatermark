@@ -37,12 +37,13 @@ function readPixel(data, width, x, y, channel) {
 }
 
 /**
- * Reconstruct only the Gemini diamond area from its surrounding clean pixels.
- * Unlike the previous blur-box fallback, this uses a feathered diamond mask,
- * so no rectangular patch is painted over the video.
+ * Tested against the user's actual 1080x1920 sample at 0.5s, 2s, 4s, 6s,
+ * 8s and 9.5s. The residual Gemini diamond is centred at ~904,1744 after
+ * the calibrated reverse-alpha pass. This uses a feathered diamond mask,
+ * not a rectangular blur patch.
  */
 function seamlessDiamondInpaint(ctx, canvas) {
-  const region = { x: 858, y: 1622, width: 116, height: 116 };
+  const region = { x: 846, y: 1686, width: 116, height: 116 };
   const pad = 34;
   const sx = Math.max(0, region.x - pad);
   const sy = Math.max(0, region.y - pad);
@@ -68,10 +69,7 @@ function seamlessDiamondInpaint(ctx, canvas) {
     for (let x = 0; x < region.width; x++) {
       const nx = ((x + 0.5) - region.width / 2) / (region.width / 2);
       const diamondDistance = Math.abs(nx) + Math.abs(ny);
-
-      // Full replacement over the actual ~96px diamond, then feather softly
-      // into the untouched frame. The 116px working region provides margin.
-      const mask = 1 - smoothstep(0.78, 1.04, diamondDistance);
+      const mask = 1 - smoothstep(0.70, 1.08, diamondDistance);
       if (mask <= 0.001) continue;
 
       const fx = region.width > 1 ? x / (region.width - 1) : 0.5;
