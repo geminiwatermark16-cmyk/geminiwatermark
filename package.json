@@ -1,9 +1,12 @@
 {
   "name": "geminiwatermark-space",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Gemini/Veo visible watermark remover with Cashfree ₹99 / 30-day video access",
   "scripts": {
-    "check": "node --check src/main.js && node --check api/create-order.js && node --check api/verify-order.js && node --check api/verify-entitlement.js && node --check api/admin-report.js && node --check lib/cashfree.js"
+    "check": "node --check src/main.js && node --check api/create-order.js && node --check api/verify-order.js && node --check api/verify-entitlement.js && node --check api/admin-report.js && node --check api/chat.js && node --check api/admin-chat.js && node --check api/track.js && node --check api/admin-traffic.js && node --check lib/cashfree.js && node --check lib/store.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
   }
 }
