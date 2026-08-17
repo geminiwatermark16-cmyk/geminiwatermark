@@ -4,8 +4,8 @@ Browser-side visible Gemini/Veo watermark-remover UI with a Cashfree-powered ₹
 
 ## Product flow
 - Images: free
-- First video: free on the current browser
-- Additional video processing: ₹99 video plan
+- First 21 successfully processed videos: free on the current browser
+- Video 22 onward: ₹99 video plan required
 - Cashfree hosted checkout opens from the upgrade modal
 - The ₹99 order is created server-side
 - Payment is verified server-side with Cashfree before the plan unlocks
@@ -55,4 +55,4 @@ npm run check
 A plain `python3 -m http.server` can preview the UI, but Cashfree API routes require Vercel Functions (for example `vercel dev`) and valid Cashfree sandbox credentials.
 
 ## Important limitation
-The one-free-video trial is currently tracked per browser. A user can reset browser storage to reset that trial. If you need strict one-free-video enforcement across browsers/devices, add login + a server-side database/usage ledger.
+The 21-free-video quota is currently tracked per browser. A user can reset browser storage to reset that quota. Existing browsers that had already used the old one-video trial are migrated as having used 1 of 21 videos. If you need strict 21-free-video enforcement across browsers/devices, add login + a server-side database/usage ledger.
