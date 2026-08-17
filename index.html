@@ -21,6 +21,15 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/src/styles.css" />
   <link rel="stylesheet" href="/src/fixes.css" />
+  <style>
+    #gw-chat-launcher{position:fixed;right:22px;bottom:22px;z-index:99998;border:0;border-radius:999px;background:#111;color:#fff;padding:14px 18px;font:700 14px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:9px}
+    #gw-chat-launcher .dot{width:9px;height:9px;border-radius:50%;background:#42d17d;box-shadow:0 0 0 4px rgba(66,209,125,.14)}
+    #gw-chat-panel{position:fixed;right:22px;bottom:82px;width:min(370px,calc(100vw - 24px));z-index:99999;background:#111;color:#fff;border:1px solid #292929;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.32);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;display:none}
+    #gw-chat-panel.open{display:block}
+    .gw-chat-head{padding:18px;border-bottom:1px solid #292929;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.gw-chat-head strong{display:block;font-size:16px}.gw-chat-head small{display:block;color:#9c9c9c;margin-top:5px}.gw-chat-close{border:0;background:transparent;color:#aaa;font-size:24px;line-height:1;cursor:pointer;padding:0}
+    .gw-chat-body{padding:18px}.gw-chat-bubble{background:#1b1b1b;border:1px solid #2c2c2c;border-radius:14px 14px 14px 4px;padding:12px 13px;font-size:14px;line-height:1.45;margin-bottom:14px}.gw-chat-label{display:block;color:#aaa;font-size:12px;margin:10px 0 6px}.gw-chat-input,.gw-chat-textarea{width:100%;box-sizing:border-box;border:1px solid #333;background:#171717;color:#fff;border-radius:11px;padding:11px 12px;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;outline:none}.gw-chat-textarea{min-height:94px;resize:vertical}.gw-chat-send{width:100%;border:0;border-radius:11px;background:#fff;color:#111;padding:12px 14px;font-weight:800;margin-top:12px;cursor:pointer}.gw-chat-note{font-size:11px;line-height:1.4;color:#858585;margin-top:10px}.gw-chat-note a{color:#cfcfcf}.gw-chat-success{display:none;background:#13261b;border:1px solid #245c38;color:#a9efc0;border-radius:12px;padding:12px;margin-top:12px;font-size:13px}
+    @media(max-width:600px){#gw-chat-launcher{right:14px;bottom:14px}#gw-chat-panel{right:12px;bottom:72px;width:calc(100vw - 24px)}}
+  </style>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -50,6 +59,45 @@
       <p>Images are free. The first 21 videos are free on this browser. The ₹99 video plan is valid for 30 days after successful payment.</p>
     </main>
   </noscript>
+
+  <button id="gw-chat-launcher" type="button" aria-controls="gw-chat-panel" aria-expanded="false"><span class="dot"></span>Live Chat</button>
+  <section id="gw-chat-panel" aria-label="Live support chat">
+    <div class="gw-chat-head"><div><strong>GeminiWatermark Support</strong><small>Usually replies by email</small></div><button class="gw-chat-close" id="gw-chat-close" type="button" aria-label="Close chat">×</button></div>
+    <div class="gw-chat-body">
+      <div class="gw-chat-bubble">Hi 👋 How can we help you today?</div>
+      <form id="gw-chat-form">
+        <label class="gw-chat-label" for="gw-chat-name">Name</label><input class="gw-chat-input" id="gw-chat-name" autocomplete="name" placeholder="Your name" required>
+        <label class="gw-chat-label" for="gw-chat-email">Email</label><input class="gw-chat-input" id="gw-chat-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label class="gw-chat-label" for="gw-chat-message">Message</label><textarea class="gw-chat-textarea" id="gw-chat-message" placeholder="Type your message..." required></textarea>
+        <button class="gw-chat-send" type="submit">Send message</button>
+        <div id="gw-chat-success" class="gw-chat-success">Your email app is opening with this message ready to send.</div>
+        <div class="gw-chat-note">Official support: <a href="mailto:geminiwatermark16@gmail.com">geminiwatermark16@gmail.com</a></div>
+      </form>
+    </div>
+  </section>
+
+  <script>
+    (()=>{
+      const launcher=document.getElementById('gw-chat-launcher');
+      const panel=document.getElementById('gw-chat-panel');
+      const close=document.getElementById('gw-chat-close');
+      const form=document.getElementById('gw-chat-form');
+      const success=document.getElementById('gw-chat-success');
+      const setOpen=(open)=>{panel.classList.toggle('open',open);launcher.setAttribute('aria-expanded',String(open));};
+      launcher.addEventListener('click',()=>setOpen(!panel.classList.contains('open')));
+      close.addEventListener('click',()=>setOpen(false));
+      form.addEventListener('submit',(event)=>{
+        event.preventDefault();
+        const name=document.getElementById('gw-chat-name').value.trim();
+        const email=document.getElementById('gw-chat-email').value.trim();
+        const message=document.getElementById('gw-chat-message').value.trim();
+        const subject=encodeURIComponent(`GeminiWatermark support — ${name}`);
+        const body=encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPage: ${location.href}\n\nMessage:\n${message}`);
+        success.style.display='block';
+        location.href=`mailto:geminiwatermark16@gmail.com?subject=${subject}&body=${body}`;
+      });
+    })();
+  </script>
   <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
   <script type="module" src="/src/app-bootstrap-v11.js?v=20260818-14"></script>
 </body>
