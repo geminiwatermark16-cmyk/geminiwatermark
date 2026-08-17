@@ -3,6 +3,8 @@
     ['/remove-gemini-watermark', 'Remove Gemini watermark'],
     ['/gemini-video-watermark-remover', 'Gemini video remover'],
     ['/veo-watermark-remover', 'Veo watermark remover'],
+    ['/blog', 'Creator guides'],
+    ['/blog/clean-ai-video-without-cropping', '1080×1920 video guide'],
   ];
 
   function install() {
