@@ -16,9 +16,6 @@ await import('./video-clean-v13.js?v=20260818-14');
 if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
   const pureCleaner = window.__GW_PURE_CLEAN_STORY_VIDEO__;
 
-  // runtime-loader calls this hook for supported 1080x1920 Gemini diamond clips.
-  // The outer timeout guarantees the UI can never spin forever even if a
-  // browser media event fails to arrive.
   window.__GW_EXACT_CLEAN_STORY_VIDEO__ = async (blob, options = {}) => {
     const title = document.getElementById('processingTitle');
     const sub = document.getElementById('processingSub');
@@ -49,40 +46,94 @@ function setHtml(element, html) {
   if (element && element.innerHTML !== html) element.innerHTML = html;
 }
 
+function ensureUnlimitedStyles() {
+  if (document.getElementById('gw-unlimited-plan-style')) return;
+  const style = document.createElement('style');
+  style.id = 'gw-unlimited-plan-style';
+  style.textContent = `
+    #pricing article.featured{position:relative;overflow:hidden}
+    .gwUnlimitedPill{display:inline-flex;align-items:center;gap:7px;margin:10px 0 4px;padding:8px 12px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .gwUnlimitedPill::before{content:'✦';font-size:11px}
+    #payModal .gwUnlimitedModal{display:inline-flex;margin:2px 0 12px;padding:8px 12px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    #videoBadge{white-space:nowrap}
+  `;
+  document.head.appendChild(style);
+}
+
 function patchPaidVideoCopy() {
+  ensureUnlimitedStyles();
+
   const videoBadge = document.getElementById('videoBadge');
   const quotaPrice = document.getElementById('quotaPrice');
   const isPaid = videoBadge?.textContent?.trim() === 'Unlocked' || quotaPrice?.textContent?.trim() === 'Active';
   const videoMode = document.getElementById('videoTab')?.classList.contains('active');
 
-  setHtml(document.querySelector('.hero .badge'), '<i></i> Images free · Video requires ₹99 plan');
-  setText(document.querySelector('.hero .lead'), 'Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Video processing requires the ₹99 plan before your first video upload.');
+  setHtml(document.querySelector('.hero .badge'), '<i></i> Images free · Unlimited Videos ₹99 / 30 Days');
+  setText(document.querySelector('.hero .lead'), 'Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Get unlimited video processing for 30 days with the ₹99 plan. Payment is required before your first video upload.');
 
-  if (videoBadge && !isPaid) setText(videoBadge, '₹99');
+  if (videoBadge && !isPaid) setText(videoBadge, '₹99 · Unlimited');
 
-  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>Paid</b><span>Video access</span>');
-  setText(document.querySelector('#pricing h2'), 'Images free. Video starts at ₹99.');
-  setText(document.querySelector('#pricing .sectionLead'), 'Image cleanup stays free. A verified ₹99 plan is required before any video can be uploaded or processed.');
-  setText(document.querySelector('#pricing article.featured ul li:first-child'), 'Payment required before first video upload');
+  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>Unlimited</b><span>Videos for 30 days</span>');
+  setHtml(document.querySelector('.metrics article:nth-child(4)'), '<b>₹99</b><span>30-day video plan</span>');
+
+  setText(document.querySelector('#pricing h2'), 'Unlimited videos. ₹99 for 30 days.');
+  setText(document.querySelector('#pricing .sectionLead'), 'Pay ₹99 once and process unlimited supported videos for 30 days. No free video trial and no automatic renewal.');
+
+  const featured = document.querySelector('#pricing article.featured');
+  if (featured) {
+    setText(featured.querySelector(':scope > span'), 'UNLIMITED VIDEO PLAN');
+    const priceEm = featured.querySelector('.price em');
+    if (priceEm) setText(priceEm, '30 days');
+    const list = featured.querySelector('ul');
+    if (list) {
+      const items = list.querySelectorAll('li');
+      if (items[0]) setText(items[0], 'Unlimited video processing for 30 days');
+      if (items[1]) setText(items[1], '1080×1920 story/reel support');
+      if (items[2]) setText(items[2], 'New Gemini diamond + old Veo mode');
+      let pill = featured.querySelector('.gwUnlimitedPill');
+      if (!pill) {
+        pill = document.createElement('div');
+        pill.className = 'gwUnlimitedPill';
+        const price = featured.querySelector('.price');
+        price?.insertAdjacentElement('afterend', pill);
+      }
+      setText(pill, 'Unlimited Videos · 30 Days');
+    }
+    const buyBtn = featured.querySelector('#buyPlan');
+    if (buyBtn) setText(buyBtn, 'Get Unlimited Videos · ₹99');
+  }
 
   const faqDetails = [...document.querySelectorAll('#faq details')];
   const oldTrialFaq = faqDetails.find((detail) => detail.querySelector('summary')?.textContent?.includes('21 free'));
   if (oldTrialFaq) {
     setText(oldTrialFaq.querySelector('summary'), 'Do videos have a free trial?');
-    setText(oldTrialFaq.querySelector('p'), 'No. Video upload and processing require the ₹99 plan. Image cleanup remains free.');
+    setText(oldTrialFaq.querySelector('p'), 'No. Video upload and processing require the ₹99 plan. The plan includes unlimited supported video processing for 30 days. Image cleanup remains free.');
   }
 
-  const modalText = document.getElementById('payModal')?.querySelector('.modalCard > p');
-  setText(modalText, 'Video processing requires the ₹99 plan. Complete payment to unlock video upload and processing.');
+  const modal = document.getElementById('payModal');
+  const modalCard = modal?.querySelector('.modalCard');
+  if (modalCard) {
+    setText(modalCard.querySelector('h2'), 'Unlock Unlimited Videos');
+    setText(modalCard.querySelector(':scope > p'), 'Pay ₹99 once to unlock unlimited supported video processing for 30 days. Payment is required before your first video upload.');
+    const priceText = modalCard.querySelector('.payPrice span');
+    if (priceText) setText(priceText, 'Unlimited videos · 30 days');
+    let modalPill = modalCard.querySelector('.gwUnlimitedModal');
+    if (!modalPill) {
+      modalPill = document.createElement('div');
+      modalPill.className = 'gwUnlimitedModal';
+      modalCard.querySelector('.payPrice')?.insertAdjacentElement('beforebegin', modalPill);
+    }
+    setText(modalPill, 'Unlimited Videos · 30 Days');
+  }
 
   if (videoMode && !isPaid) {
-    setText(document.getElementById('quotaTitle'), '₹99 video plan required');
-    setText(document.getElementById('quotaText'), 'Pay once to unlock 30-day video access');
+    setText(document.getElementById('quotaTitle'), 'Unlimited Videos · ₹99');
+    setText(document.getElementById('quotaText'), '30 days unlimited processing · no auto-renewal');
     setText(quotaPrice, '₹99');
-    setText(document.getElementById('toolTitle'), 'Unlock video processing');
-    setText(document.getElementById('toolSub'), 'Payment is required before your first video upload');
-    setText(document.getElementById('dropStrong'), 'Unlock video for ₹99');
-    setText(document.getElementById('dropMeta'), 'Click to purchase the ₹99 plan before uploading video');
+    setText(document.getElementById('toolTitle'), 'Unlock unlimited video processing');
+    setText(document.getElementById('toolSub'), '₹99 gives unlimited supported videos for 30 days');
+    setText(document.getElementById('dropStrong'), 'Get Unlimited Videos · ₹99');
+    setText(document.getElementById('dropMeta'), 'Pay once · unlimited supported videos for 30 days');
   }
 }
 
