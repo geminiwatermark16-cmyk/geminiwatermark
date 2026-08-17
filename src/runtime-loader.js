@@ -1,8 +1,10 @@
-await import('./video-position-patch.js?v=20260818-4');
-await import('./video-deep-clean.js?v=20260818-4');
+await import('./video-position-patch.js?v=20260818-5');
+await import('./video-deep-clean.js?v=20260818-5');
 
-const response = await fetch('./main-fixed.js?v=20260818-4', { cache: 'no-store' });
-if (!response.ok) throw new Error('Could not load the watermark remover application.');
+// Resolve main-fixed.js relative to this module, not relative to the page URL.
+const mainUrl = new URL('./main-fixed.js?v=20260818-5', import.meta.url);
+const response = await fetch(mainUrl, { cache: 'no-store' });
+if (!response.ok) throw new Error(`Could not load the watermark remover application (${response.status}).`);
 let source = await response.text();
 
 const processNeedle = "const blob = await engine.processVideoFile(state.file, options);";
