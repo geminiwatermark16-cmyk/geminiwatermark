@@ -1,7 +1,15 @@
+const ENGINE_URLS = [
+  'https://esm.sh/@pictx/gemini-veo-watermark-remover@0.2.4/browser?bundle',
+  'https://esm.run/@pictx/gemini-veo-watermark-remover@0.2.4/browser'
+];
+
+const STORY_WATERMARK = { x: 856, y: 1696, width: 96, height: 96 };
+const ALPHA_MAP_KEY = 'veo-diamond-1080p-portrait';
+
 function waitFor(target, event) {
   return new Promise((resolve, reject) => {
     const onEvent = () => { cleanup(); resolve(); };
-    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for seamless cleanup.')); };
+    const onError = () => { cleanup(); reject(new Error('Video could not be decoded for exact cleanup.')); };
     const cleanup = () => {
       target.removeEventListener(event, onEvent);
       target.removeEventListener('error', onError);
@@ -20,85 +28,49 @@ function recorderMime() {
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+let toolsPromise;
+async function loadReverseAlphaTools() {
+  if (toolsPromise) return toolsPromise;
+  toolsPromise = (async () => {
+    let lastError;
+    for (const url of ENGINE_URLS) {
+      try {
+        const engine = await import(url);
+        if (typeof engine.removeWatermark !== 'function' || typeof engine.getEmbeddedAlphaMap !== 'function') continue;
+        const alphaMap = engine.getEmbeddedAlphaMap(ALPHA_MAP_KEY);
+        if (!alphaMap || alphaMap.width !== 96 || alphaMap.height !== 96 || !alphaMap.data) {
+          throw new Error('The calibrated 96×96 Gemini diamond alpha map is unavailable.');
+        }
+        return { removeWatermark: engine.removeWatermark, alphaMap };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('Exact reverse-alpha engine could not load.');
+  })();
+  return toolsPromise;
 }
 
-function smoothstep(edge0, edge1, value) {
-  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-  return t * t * (3 - 2 * t);
-}
-
-function readPixel(data, width, x, y, channel) {
-  const px = clamp(Math.round(x), 0, width - 1);
-  const height = data.length / 4 / width;
-  const py = clamp(Math.round(y), 0, height - 1);
-  return data[(py * width + px) * 4 + channel];
+function cleanCurrentFrame(ctx, tools) {
+  const { x, y, width, height } = STORY_WATERMARK;
+  const region = ctx.getImageData(x, y, width, height);
+  tools.removeWatermark(region, tools.alphaMap.data, { x: 0, y: 0, width, height });
+  ctx.putImageData(region, x, y);
 }
 
 /**
- * Tested against the user's actual 1080x1920 sample at 0.5s, 2s, 4s, 6s,
- * 8s and 9.5s. The residual Gemini diamond is centred at ~904,1744 after
- * the calibrated reverse-alpha pass. This uses a feathered diamond mask,
- * not a rectangular blur patch.
+ * Exact 1080×1920 Gemini story cleaner.
+ *
+ * This intentionally does NOT blur or inpaint. It applies the SDK's calibrated
+ * 96×96 Gemini diamond alpha map directly at the position measured from the
+ * user's actual current story sample (x=856, y=1696). Only alpha-map pixels are
+ * changed, so there is no rectangular/square patch painted over the frame.
  */
-function seamlessDiamondInpaint(ctx, canvas) {
-  const region = { x: 846, y: 1686, width: 116, height: 116 };
-  const pad = 34;
-  const sx = Math.max(0, region.x - pad);
-  const sy = Math.max(0, region.y - pad);
-  const sw = Math.min(canvas.width - sx, region.width + pad * 2);
-  const sh = Math.min(canvas.height - sy, region.height + pad * 2);
-
-  const source = ctx.getImageData(sx, sy, sw, sh);
-  const target = ctx.getImageData(region.x, region.y, region.width, region.height);
-  const sourceData = source.data;
-  const out = target.data;
-
-  const localX = region.x - sx;
-  const localY = region.y - sy;
-  const leftSampleX = localX - 16;
-  const rightSampleX = localX + region.width + 16;
-  const topSampleY = localY - 16;
-  const bottomSampleY = localY + region.height + 16;
-
-  for (let y = 0; y < region.height; y++) {
-    const ny = ((y + 0.5) - region.height / 2) / (region.height / 2);
-    const fy = region.height > 1 ? y / (region.height - 1) : 0.5;
-
-    for (let x = 0; x < region.width; x++) {
-      const nx = ((x + 0.5) - region.width / 2) / (region.width / 2);
-      const diamondDistance = Math.abs(nx) + Math.abs(ny);
-      const mask = 1 - smoothstep(0.70, 1.08, diamondDistance);
-      if (mask <= 0.001) continue;
-
-      const fx = region.width > 1 ? x / (region.width - 1) : 0.5;
-      const srcY = localY + y;
-      const srcX = localX + x;
-      const outIndex = (y * region.width + x) * 4;
-
-      for (let c = 0; c < 3; c++) {
-        const left = readPixel(sourceData, sw, leftSampleX, srcY, c);
-        const right = readPixel(sourceData, sw, rightSampleX, srcY, c);
-        const top = readPixel(sourceData, sw, srcX, topSampleY, c);
-        const bottom = readPixel(sourceData, sw, srcX, bottomSampleY, c);
-
-        const horizontal = left + (right - left) * fx;
-        const vertical = top + (bottom - top) * fy;
-        const reconstructed = horizontal * 0.5 + vertical * 0.5;
-        const original = out[outIndex + c];
-        out[outIndex + c] = Math.round(original * (1 - mask) + reconstructed * mask);
-      }
-    }
-  }
-
-  ctx.putImageData(target, region.x, region.y);
-}
-
-export async function deepCleanStoryVideo(inputBlob, options = {}) {
+export async function exactCleanStoryVideo(inputBlob, options = {}) {
   if (!(inputBlob instanceof Blob) || inputBlob.size === 0) return inputBlob;
-  if (!('MediaRecorder' in window)) return inputBlob;
+  if (!('MediaRecorder' in window)) throw new Error('This browser cannot encode the cleaned video. Use current Chrome or Edge.');
 
+  const tools = await loadReverseAlphaTools();
   const url = URL.createObjectURL(inputBlob);
   const video = document.createElement('video');
   video.src = url;
@@ -115,12 +87,15 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     await waitFor(video, 'loadedmetadata');
     const width = video.videoWidth;
     const height = video.videoHeight;
-    if (width !== 1080 || height !== 1920) return inputBlob;
+    if (width !== 1080 || height !== 1920) {
+      throw new Error(`Exact story profile expects 1080×1920, received ${width}×${height}.`);
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
+    if (!ctx) throw new Error('Canvas processing is unavailable in this browser.');
 
     const fps = 30;
     const canvasStream = canvas.captureStream(fps);
@@ -134,7 +109,8 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     const mimeType = recorderMime();
     const recorder = new MediaRecorder(outputStream, {
       ...(mimeType ? { mimeType } : {}),
-      videoBitsPerSecond: 9_000_000,
+      videoBitsPerSecond: 12_500_000,
+      audioBitsPerSecond: 192_000,
     });
 
     const chunks = [];
@@ -150,7 +126,7 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
     const render = () => {
       if (cancelled) return;
       ctx.drawImage(video, 0, 0, width, height);
-      seamlessDiamondInpaint(ctx, canvas);
+      cleanCurrentFrame(ctx, tools);
 
       if (Number.isFinite(video.duration) && video.duration > 0 && typeof options.onProgress === 'function') {
         options.onProgress(Math.min(1, video.currentTime / video.duration));
@@ -162,8 +138,6 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
       }
     };
 
-    ctx.drawImage(video, 0, 0, width, height);
-    seamlessDiamondInpaint(ctx, canvas);
     recorder.start(250);
     await video.play();
     if (typeof video.requestVideoFrameCallback === 'function') video.requestVideoFrameCallback(render);
@@ -176,10 +150,8 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
 
     const type = recorder.mimeType || mimeType || 'video/webm';
     const output = new Blob(chunks, { type: type.split(';')[0] });
-    return output.size ? output : inputBlob;
-  } catch (error) {
-    console.warn('Seamless cleanup fallback skipped:', error);
-    return inputBlob;
+    if (!output.size) throw new Error('Exact video cleanup produced an empty output.');
+    return output;
   } finally {
     video.pause();
     video.removeAttribute('src');
@@ -189,4 +161,4 @@ export async function deepCleanStoryVideo(inputBlob, options = {}) {
   }
 }
 
-window.__GW_DEEP_CLEAN_VIDEO__ = deepCleanStoryVideo;
+window.__GW_EXACT_CLEAN_STORY_VIDEO__ = exactCleanStoryVideo;
