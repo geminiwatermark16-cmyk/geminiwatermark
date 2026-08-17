@@ -8,6 +8,7 @@ const {
 } = require('../lib/cashfree');
 
 const BOOTSTRAP_ADMIN_KEY_HASH = 'f9eb3e6f2c2711cc9a6fc3cf435c72d763153cf4c1a9dafe80adfc05f2e1d1d7';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function sha256(value) {
   return crypto.createHash('sha256').update(String(value || '')).digest('hex');
@@ -98,19 +99,20 @@ function normalize(item) {
   };
 }
 
-async function fetchRecon(startDate, endDate) {
+async function fetchReconRange(startDate, endDate) {
   const all = [];
   let cursor = null;
   let environment = null;
 
-  for (let page = 0; page < 5; page += 1) {
+  for (let page = 0; page < 8; page += 1) {
     const response = await cashfreeRequest('/recon', {
       method: 'POST',
       body: JSON.stringify({
-        pagination: { limit: 100, cursor },
+        pagination: { limit: 50, cursor },
         filters: { start_date: startDate, end_date: endDate },
       }),
     });
+
     environment = response.__cashfreeEnvironment || environment;
     const rows = Array.isArray(response?.data) ? response.data : [];
     all.push(...rows);
@@ -121,9 +123,74 @@ async function fetchRecon(startDate, endDate) {
   return { rows: all, environment };
 }
 
+async function fetchRecon(startDate, endDate) {
+  const startMs = Date.parse(startDate);
+  const endMs = Date.parse(endDate);
+  const rows = [];
+  const failures = [];
+  let environment = null;
+  let chunks = 0;
+
+  // Cashfree occasionally returns a generic processing error for larger windows.
+  // Query smaller windows so one bad interval does not block the whole admin console.
+  for (let chunkStart = startMs; chunkStart < endMs; chunkStart += 6 * DAY_MS) {
+    chunks += 1;
+    const chunkEnd = Math.min(chunkStart + (6 * DAY_MS) - 1, endMs);
+    try {
+      const part = await fetchReconRange(
+        new Date(chunkStart).toISOString(),
+        new Date(chunkEnd).toISOString(),
+      );
+      rows.push(...part.rows);
+      environment = part.environment || environment;
+    } catch (error) {
+      if (error?.code === 'CASHFREE_AUTH_FAILED' || error?.status === 401) throw error;
+      failures.push({
+        status: Number(error?.status) || 0,
+        message: String(error?.message || 'Cashfree reconciliation failed.'),
+        environment: error?.cashfreeEnvironment || null,
+      });
+      console.error('Cashfree recon chunk failed', failures[failures.length - 1]);
+    }
+  }
+
+  return { rows, environment, failures, chunks };
+}
+
+function trafficInfo() {
+  return {
+    provider: 'Vercel Web Analytics',
+    dashboardUrl: 'https://vercel.com/geminiwatermarkgmailcom/geminiwatermark/analytics',
+    note: 'Visitor, referrer, country and device traffic is available in Vercel Analytics once Web Analytics is enabled for the project.',
+  };
+}
+
+function unavailableReport(start, end, warning, code = 'CASHFREE_RECON_UNAVAILABLE') {
+  return {
+    ok: true,
+    dataAvailable: false,
+    warning,
+    code,
+    range: { start: start.toISOString(), end: end.toISOString() },
+    cashfree: { status: 'unavailable', environment: 'unknown' },
+    summary: {
+      paidOrders: null,
+      clients: null,
+      activePlans: null,
+      expiredPlans: null,
+      revenue: null,
+      currency: PLAN_CURRENCY,
+      plan: `₹${PLAN_AMOUNT} / ${PLAN_DURATION_DAYS} days`,
+    },
+    purchases: [],
+    traffic: trafficInfo(),
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'Method not allowed.' });
@@ -134,10 +201,19 @@ module.exports = async function handler(req, res) {
   }
 
   const end = new Date();
-  const start = new Date(end.getTime() - (32 * 24 * 60 * 60 * 1000));
+  const start = new Date(end.getTime() - (30 * DAY_MS));
 
   try {
     const recon = await fetchRecon(start.toISOString(), end.toISOString());
+
+    if (recon.failures.length === recon.chunks && recon.rows.length === 0) {
+      return res.status(200).json(unavailableReport(
+        start,
+        end,
+        'Admin access is working, but Cashfree reconciliation is temporarily unavailable. Payment totals are hidden until Cashfree responds successfully.',
+      ));
+    }
+
     const normalized = recon.rows.map(normalize).filter((row) =>
       row.orderId.startsWith('gw_')
       && row.amount === PLAN_AMOUNT
@@ -171,9 +247,14 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
+      dataAvailable: true,
+      warning: recon.failures.length
+        ? 'Some Cashfree reconciliation intervals could not be loaded. The figures below may be partial.'
+        : null,
       range: { start: start.toISOString(), end: end.toISOString() },
       cashfree: {
-        environment: recon.environment || 'unknown',
+        status: recon.failures.length ? 'partial' : 'connected',
+        environment: recon.environment || 'production',
       },
       summary: {
         paidOrders: purchases.length,
@@ -185,27 +266,24 @@ module.exports = async function handler(req, res) {
         plan: `₹${PLAN_AMOUNT} / ${PLAN_DURATION_DAYS} days`,
       },
       purchases: purchases.slice(0, 100),
-      traffic: {
-        provider: 'Vercel Web Analytics',
-        dashboardUrl: 'https://vercel.com/geminiwatermarkgmailcom/geminiwatermark/analytics',
-        note: 'Visitor, referrer, country and device traffic is tracked in Vercel Analytics once Web Analytics is enabled for the project.',
-      },
+      traffic: trafficInfo(),
     });
   } catch (error) {
     console.error(error);
 
     if (error?.code === 'CASHFREE_AUTH_FAILED' || error?.status === 401) {
-      return res.status(502).json({
-        ok: false,
-        code: 'CASHFREE_AUTH_FAILED',
-        error: 'Cashfree API authentication failed. Update the Vercel CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET with the Payment Gateway API keys from the same Cashfree merchant account, then redeploy.',
-      });
+      return res.status(200).json(unavailableReport(
+        start,
+        end,
+        'Admin access is working, but Cashfree rejected the configured Payment Gateway API credentials. Update the Vercel Cashfree PG keys to restore payment statistics.',
+        'CASHFREE_AUTH_FAILED',
+      ));
     }
 
-    return res.status(502).json({
-      ok: false,
-      error: 'Could not load Cashfree reconciliation right now.',
-      detail: process.env.NODE_ENV === 'development' ? String(error?.message || error) : undefined,
-    });
+    return res.status(200).json(unavailableReport(
+      start,
+      end,
+      'Admin access is working, but Cashfree reconciliation could not be loaded right now. Try Refresh again later.',
+    ));
   }
 };
