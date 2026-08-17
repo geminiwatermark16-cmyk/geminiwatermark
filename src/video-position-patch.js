@@ -7,20 +7,19 @@ function patchCurrentGeminiVideoPositions(engine) {
   const catalog = engine?.GEMINI_DIAMOND_VIDEO_CATALOG;
   if (!catalog) return false;
 
-  // The npm browser package is calibrated against the older v0.5.0 profile
-  // (192px right/bottom margins for 1080p diamond videos). Newer Gemini/Veo
-  // exports moved the visible diamond. Current 1080x1920 story/reel samples
-  // use the relocated ~128px-margin slot, matching upstream's later fix.
+  // Calibrated from the current 1080x1920 Gemini story sample that was still
+  // showing the visible diamond after the previous compatibility patch.
+  // The active mark begins around x=868/y=1632 in the source frame.
   const portrait = catalog['1080x1920'];
   if (portrait?.watermark?.width === 96 && portrait?.watermark?.height === 96) {
-    portrait.position.x = 1080 - 96 - 128; // 856
-    portrait.position.y = 1920 - 96 - 128; // 1696
+    portrait.position.x = 868;
+    portrait.position.y = 1632;
   }
 
   const landscape = catalog['1920x1080'];
   if (landscape?.watermark?.width === 96 && landscape?.watermark?.height === 96) {
-    landscape.position.x = 1920 - 96 - 128; // 1696
-    landscape.position.y = 1080 - 96 - 128; // 856
+    landscape.position.x = 1696;
+    landscape.position.y = 856;
   }
 
   window.__GW_VIDEO_PROFILE_PATCHED__ = true;
