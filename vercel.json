@@ -3,6 +3,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/blog", "destination": "/blog.html" },
+    { "source": "/blog/how-to-turn-off-gemini-visible-watermark", "destination": "/blog/how-to-turn-off-gemini-visible-watermark.html" },
     { "source": "/blog/clean-ai-video-without-cropping", "destination": "/blog/clean-ai-video-without-cropping.html" },
     { "source": "/blog/why-watermark-remains-after-export", "destination": "/blog/why-watermark-remains-after-export.html" },
     { "source": "/blog/visible-watermark-vs-synthid", "destination": "/blog/visible-watermark-vs-synthid.html" },
