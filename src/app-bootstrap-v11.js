@@ -1,16 +1,25 @@
-// Paid-video policy: images stay free, but video access requires the paid plan
-// before the first upload. Mark the old browser trial as fully consumed before
-// the application runtime evaluates its entitlement gate.
+// 21-free-video policy restore.
+// A previous bootstrap forced the browser trial counter to 21 on every load,
+// which made the ₹99 plan appear before the first video. Restore a fresh
+// 21-video allowance once per browser, then let main-fixed.js enforce payment
+// only from video 22 onward.
+const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
+const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
+const TRIAL_RESTORE_KEY = 'gw_video_trial_21_restored_20260818_v1';
+
 try {
-  localStorage.setItem('gw_video_free_count_v2', '21');
-  localStorage.setItem('gw_video_free_used_v1', '1');
+  if (localStorage.getItem(TRIAL_RESTORE_KEY) !== '1') {
+    localStorage.setItem(TRIAL_COUNT_KEY, '0');
+    localStorage.removeItem(LEGACY_TRIAL_KEY);
+    localStorage.setItem(TRIAL_RESTORE_KEY, '1');
+  }
 } catch {}
 
-// Load the existing app/account/payment runtime first.
+// Load the existing app/account/payment runtime first. Its native policy is:
+// first 21 successfully processed videos free, video 22+ requires a plan.
 await import('./runtime-loader.js?v=20260818-13');
 
-// Pure-browser story cleaner with texture restore, edge feathering and safe
-// temporal stabilization. No OpenCV/WASM dependency.
+// Keep the current pure-browser story cleaner.
 await import('./video-clean-v13.js?v=20260818-14');
 
 if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
@@ -59,18 +68,13 @@ function setHtml(element, html) {
   if (element && element.innerHTML !== html) element.innerHTML = html;
 }
 
-function ensureUnlimitedStyles() {
-  if (document.getElementById('gw-unlimited-plan-style')) return;
-  const style = document.createElement('style');
-  style.id = 'gw-unlimited-plan-style';
-  style.textContent = `
-    #pricing article.featured{position:relative;overflow:hidden}
-    .gwUnlimitedPill{display:inline-flex;align-items:center;gap:7px;margin:10px 0 4px;padding:8px 12px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-    .gwUnlimitedPill::before{content:'✦';font-size:11px}
-    #payModal .gwUnlimitedModal{display:inline-flex;margin:2px 0 12px;padding:8px 12px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-    #videoBadge{white-space:nowrap}
-  `;
-  document.head.appendChild(style);
+function currentVideoAccess() {
+  const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
+  const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
+  const paid = badge === 'Unlocked' || quota === 'Active';
+  const match = badge.match(/^(\d+)\s+Free$/i);
+  const freeLeft = match ? Math.max(0, Number(match[1]) || 0) : 0;
+  return { paid, freeLeft, trialAvailable: !paid && freeLeft > 0 };
 }
 
 function patchCheckoutIdentityUi() {
@@ -100,75 +104,56 @@ function patchCheckoutIdentityUi() {
   }
 }
 
-function patchPaidVideoCopy() {
-  ensureUnlimitedStyles();
+function patchTrialAndRegionalCopy() {
   const price = planPrice.displayPrice;
+  const { paid, freeLeft, trialAvailable } = currentVideoAccess();
 
-  const videoBadge = document.getElementById('videoBadge');
-  const quotaPrice = document.getElementById('quotaPrice');
-  const isPaid = videoBadge?.textContent?.trim() === 'Unlocked' || quotaPrice?.textContent?.trim() === 'Active';
-  const videoMode = document.getElementById('videoTab')?.classList.contains('active');
+  setHtml(document.querySelector('.hero .badge'), `<i></i> Images free · 21 videos free · then ${price}`);
+  setText(
+    document.querySelector('.hero .lead'),
+    `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Your first 21 successfully processed videos are free, then video processing unlocks with the ${price} plan for 30 days.`
+  );
 
-  setHtml(document.querySelector('.hero .badge'), `<i></i> Images free · Unlimited Videos ${price} / 30 Days`);
-  setText(document.querySelector('.hero .lead'), `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Get unlimited video processing for 30 days with the ${price} plan. Payment is required before your first video upload.`);
-
-  if (videoBadge && !isPaid) setText(videoBadge, `${price} · Unlimited`);
-
-  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>Unlimited</b><span>Videos for 30 days</span>');
+  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>21</b><span>Videos free</span>');
   setHtml(document.querySelector('.metrics article:nth-child(4)'), `<b>${price}</b><span>30-day video plan</span>`);
 
-  setText(document.querySelector('#pricing h2'), `Unlimited videos. ${price} for 30 days.`);
-  setText(document.querySelector('#pricing .sectionLead'), `Pay ${price} once and process unlimited supported videos for 30 days. No free video trial and no automatic renewal.`);
+  setText(document.querySelector('#pricing h2'), 'Images free. 21 videos free.');
+  setText(
+    document.querySelector('#pricing .sectionLead'),
+    `Process your first 21 videos free on this browser. Video 22 onward requires the ${price} plan, valid for 30 days from successful payment.`
+  );
 
   const featured = document.querySelector('#pricing article.featured');
   if (featured) {
-    setText(featured.querySelector(':scope > span'), 'UNLIMITED VIDEO PLAN');
+    setText(featured.querySelector(':scope > span'), 'VIDEO');
     const priceValue = featured.querySelector('.price b');
     if (priceValue) setText(priceValue, price);
     const priceEm = featured.querySelector('.price em');
-    if (priceEm) setText(priceEm, '30 days');
-    const list = featured.querySelector('ul');
-    if (list) {
-      const items = list.querySelectorAll('li');
-      if (items[0]) setText(items[0], 'Unlimited video processing for 30 days');
-      if (items[1]) setText(items[1], '1080×1920 story/reel support');
-      if (items[2]) setText(items[2], 'New Gemini diamond + old Veo mode');
-      let pill = featured.querySelector('.gwUnlimitedPill');
-      if (!pill) {
-        pill = document.createElement('div');
-        pill.className = 'gwUnlimitedPill';
-        const priceBox = featured.querySelector('.price');
-        priceBox?.insertAdjacentElement('afterend', pill);
-      }
-      setText(pill, 'Unlimited Videos · 30 Days');
-    }
-    const buyBtn = featured.querySelector('#buyPlan');
-    if (buyBtn) setText(buyBtn, `Get Unlimited Videos · ${price}`);
-  }
+    if (priceEm) setText(priceEm, 'for 30 days');
 
-  const faqDetails = [...document.querySelectorAll('#faq details')];
-  const oldTrialFaq = faqDetails.find((detail) => detail.querySelector('summary')?.textContent?.includes('21 free'));
-  if (oldTrialFaq) {
-    setText(oldTrialFaq.querySelector('summary'), 'Do videos have a free trial?');
-    setText(oldTrialFaq.querySelector('p'), `No. Video upload and processing require the ${price} plan. The plan includes unlimited supported video processing for 30 days. Image cleanup remains free.`);
+    const items = featured.querySelectorAll('li');
+    if (items[0]) setText(items[0], 'First 21 videos free');
+    if (items[1]) setText(items[1], '1080×1920 story/reel support');
+    if (items[2]) setText(items[2], 'New Gemini diamond + old Veo mode');
+
+    const buyBtn = document.getElementById('buyPlan');
+    if (buyBtn) {
+      // No ₹99 checkout link/CTA while free videos remain. It appears only
+      // after all 21 free successful video processes have been consumed.
+      buyBtn.style.display = (!paid && !trialAvailable) ? '' : 'none';
+      setText(buyBtn, `Unlock video for ${price}`);
+    }
   }
 
   const modal = document.getElementById('payModal');
   const modalCard = modal?.querySelector('.modalCard');
   if (modalCard) {
-    setText(modalCard.querySelector('h2'), 'Unlock Unlimited Videos');
-    setText(modalCard.querySelector(':scope > p'), `Pay ${price} once to unlock unlimited supported video processing for 30 days. Payment is required before your first video upload.`);
+    setText(modalCard.querySelector('h2'), 'Unlock video');
+    setText(modalCard.querySelector(':scope > p'), `Your 21 free videos are used. Continue with the ${price} video plan for 30 days.`);
     const payPriceValue = modalCard.querySelector('.payPrice b');
     if (payPriceValue) setText(payPriceValue, price);
     const priceText = modalCard.querySelector('.payPrice span');
-    if (priceText) setText(priceText, 'Unlimited videos · 30 days');
-    let modalPill = modalCard.querySelector('.gwUnlimitedModal');
-    if (!modalPill) {
-      modalPill = document.createElement('div');
-      modalPill.className = 'gwUnlimitedModal';
-      modalCard.querySelector('.payPrice')?.insertAdjacentElement('beforebegin', modalPill);
-    }
-    setText(modalPill, 'Unlimited Videos · 30 Days');
+    if (priceText) setText(priceText, '30 days · no auto-renewal');
     const payBtn = document.getElementById('payBtn');
     if (payBtn && !payBtn.disabled) setText(payBtn, `Pay ${price} with Cashfree`);
   }
@@ -176,14 +161,14 @@ function patchPaidVideoCopy() {
   const accountUpgrade = document.getElementById('accountUpgrade');
   if (accountUpgrade) setText(accountUpgrade, `Buy / renew ${price} plan`);
 
-  if (videoMode && !isPaid) {
-    setText(document.getElementById('quotaTitle'), `Unlimited Videos · ${price}`);
-    setText(document.getElementById('quotaText'), '30 days unlimited processing · no auto-renewal');
-    setText(quotaPrice, price);
-    setText(document.getElementById('toolTitle'), 'Unlock unlimited video processing');
-    setText(document.getElementById('toolSub'), `${price} gives unlimited supported videos for 30 days`);
-    setText(document.getElementById('dropStrong'), `Get Unlimited Videos · ${price}`);
-    setText(document.getElementById('dropMeta'), 'Pay once · unlimited supported videos for 30 days');
+  const videoMode = document.getElementById('videoTab')?.classList.contains('active');
+  if (videoMode && trialAvailable) {
+    setText(document.getElementById('dropMeta'), `${freeLeft} free video${freeLeft === 1 ? '' : 's'} remaining · then ${price}`);
+  } else if (videoMode && !paid && !trialAvailable) {
+    setText(document.getElementById('toolTitle'), 'Unlock more video processing');
+    setText(document.getElementById('toolSub'), 'Your 21 free videos have been used');
+    setText(document.getElementById('dropStrong'), `${price} plan required`);
+    setText(document.getElementById('dropMeta'), '21 free videos used · upgrade to continue');
   }
 
   patchCheckoutIdentityUi();
@@ -260,17 +245,25 @@ async function loadRegionalPlanPrice() {
   } catch {
     planPrice = { ...DEFAULT_PLAN_PRICE };
   }
-  patchPaidVideoCopy();
+  patchTrialAndRegionalCopy();
   installRegionalCheckout();
 }
 
-patchPaidVideoCopy();
+patchTrialAndRegionalCopy();
 installRegionalCheckout();
 loadRegionalPlanPrice();
 
-for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'buyPlan', 'closeModal', 'payBtn', 'accountBtn', 'footerAccountBtn']) {
+const videoBadge = document.getElementById('videoBadge');
+if (videoBadge) {
+  new MutationObserver(() => {
+    patchTrialAndRegionalCopy();
+    installRegionalCheckout();
+  }).observe(videoBadge, { childList: true, subtree: true, characterData: true });
+}
+
+for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'closeModal', 'accountBtn', 'footerAccountBtn']) {
   document.getElementById(id)?.addEventListener('click', () => setTimeout(() => {
-    patchPaidVideoCopy();
+    patchTrialAndRegionalCopy();
     installRegionalCheckout();
   }, 0));
 }
