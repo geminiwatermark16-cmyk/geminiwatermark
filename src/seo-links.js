@@ -1,7 +1,9 @@
 (() => {
   const links = [
     ['/remove-gemini-watermark', 'Remove Gemini watermark'],
+    ['/gemini-image-watermark-remover', 'Gemini image remover'],
     ['/gemini-video-watermark-remover', 'Gemini video remover'],
+    ['/google-flow-watermark-remover', 'Google Flow remover'],
     ['/veo-watermark-remover', 'Veo watermark remover'],
     ['/blog/how-to-turn-off-gemini-visible-watermark', 'Gemini Media watermark 2026'],
     ['/blog', 'Creator guides'],
