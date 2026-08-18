@@ -9,8 +9,8 @@ const waitFor = async (selector, timeout = 10000) => {
 };
 
 const panel = await waitFor('#upscalePanel');
-if (panel && panel.dataset.aiSuperResolution !== 'v4') {
-  panel.dataset.aiSuperResolution = 'v4';
+if (panel && panel.dataset.aiSuperResolution !== 'v5') {
+  panel.dataset.aiSuperResolution = 'v5';
 
   const $ = (id) => document.getElementById(id);
   const message = $('upscaleMessage');
@@ -20,6 +20,8 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
   const processingTitle = $('upscaleProcessingTitle');
   const processingSub = $('upscaleProcessingSub');
   const fileInput = $('upscaleFileInput');
+  const dropzone = $('upscaleDropzone');
+  const beforeVideo = $('upscaleBefore');
   const afterVideo = $('upscaleAfter');
   const outputMeta = $('upscaleOutputMeta');
   const anotherButton = $('upscaleAnother');
@@ -32,7 +34,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
     return clone;
   };
 
-  // Clone the buttons so the old resize-only and MP4 override handlers are removed.
+  // Clone the buttons so old resize-only / recorder click handlers cannot fire.
   const startButton = replaceButton('upscaleStart');
   const downloadButton = replaceButton('upscaleDownload');
 
@@ -56,6 +58,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
     trust.innerHTML = '<span>● On-device AI</span><span>ESRGAN Medium</span><span>2× neural detail</span><span>High-bitrate MP4</span>';
   }
 
+  let selectedFile = fileInput?.files?.[0] || null;
   let resultBlob = null;
   let resultUrl = null;
   let mediaLib = null;
@@ -88,6 +91,56 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
     }
     if (downloadButton) downloadButton.classList.add('hidden');
     if (startButton) startButton.classList.remove('hidden');
+  };
+
+  const isVideoLike = (file) => {
+    if (!file) return false;
+    if (String(file.type || '').startsWith('video/')) return true;
+    return /\.(mp4|webm|mov|m4v)$/i.test(file.name || '');
+  };
+
+  // v1 keeps drag/drop files in a private closure. Capture the same file here so
+  // the AI button works identically for click-to-browse and drag/drop.
+  fileInput?.addEventListener('change', () => {
+    const picked = fileInput.files?.[0];
+    if (picked) selectedFile = picked;
+    if (!running) clearResult();
+  });
+
+  dropzone?.addEventListener('drop', (event) => {
+    const dropped = event.dataTransfer?.files?.[0];
+    if (dropped) selectedFile = dropped;
+  }, { capture: true });
+
+  anotherButton?.addEventListener('click', () => {
+    if (running) return;
+    selectedFile = null;
+    clearResult();
+  });
+
+  // Final fallback: if an earlier handler already loaded a blob preview, recover
+  // that exact local video back into a File instead of incorrectly saying no file.
+  const resolveSourceFile = async () => {
+    const inputFile = fileInput?.files?.[0];
+    if (isVideoLike(inputFile)) {
+      selectedFile = inputFile;
+      return inputFile;
+    }
+    if (isVideoLike(selectedFile)) return selectedFile;
+
+    const previewSrc = beforeVideo?.currentSrc || beforeVideo?.src || '';
+    if (previewSrc.startsWith('blob:')) {
+      const response = await fetch(previewSrc);
+      if (!response.ok) throw new Error('Could not reopen the selected local video. Choose the video again.');
+      const blob = await response.blob();
+      const fallbackName = 'selected-video.mp4';
+      selectedFile = new File([blob], fallbackName, {
+        type: blob.type || 'video/mp4',
+        lastModified: Date.now(),
+      });
+      return selectedFile;
+    }
+    return null;
   };
 
   const loadScript = (src, ready) => new Promise((resolve, reject) => {
@@ -161,12 +214,20 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
   };
 
   const runAiUpscale = async () => {
-    const file = fileInput?.files?.[0];
-    if (!file || !file.type.startsWith('video/')) {
+    if (running) return;
+
+    let file;
+    try {
+      file = await resolveSourceFile();
+    } catch (error) {
+      setMessage(error?.message || 'Choose the video again.', 'error');
+      return;
+    }
+
+    if (!isVideoLike(file)) {
       setMessage('Choose a video first.', 'error');
       return;
     }
-    if (running) return;
 
     running = true;
     clearResult();
@@ -176,7 +237,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
     if (processing) processing.classList.remove('hidden');
     if (processingTitle) processingTitle.textContent = 'Starting MAX Quality AI enhancement…';
     setProgress(0, 'Preparing video and ESRGAN Medium');
-    setMessage('MAX Quality is a heavier real-AI pass, so it can take substantially longer than normal resizing.');
+    setMessage('MAX Quality AI started. Keep this tab open while each frame is enhanced.');
 
     let inputCanvas;
     let inputContext;
@@ -210,8 +271,6 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
         target,
       });
 
-      // Preserve fine AI detail during the second encode. For 4K this reaches ~40 Mbps;
-      // smaller outputs keep a generous floor instead of being recompressed too aggressively.
       const targetBitrate = Math.min(
         50_000_000,
         Math.max(16_000_000, Math.round(outWidth * outHeight * 5))
@@ -299,7 +358,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
   downloadButton?.addEventListener('click', (event) => {
     event.preventDefault();
     if (!resultBlob || !resultUrl) return;
-    const selectedName = fileInput?.files?.[0]?.name || 'video';
+    const selectedName = selectedFile?.name || fileInput?.files?.[0]?.name || 'video';
     const base = selectedName.replace(/\.[^.]+$/, '') || 'video';
     const a = document.createElement('a');
     a.href = resultUrl;
@@ -308,13 +367,5 @@ if (panel && panel.dataset.aiSuperResolution !== 'v4') {
     a.click();
     a.remove();
     setMessage('MAX Quality AI-enhanced MP4 downloaded.', 'ok');
-  });
-
-  anotherButton?.addEventListener('click', () => {
-    if (!running) clearResult();
-  });
-
-  fileInput?.addEventListener('change', () => {
-    if (!running) clearResult();
   });
 }
