@@ -5,13 +5,13 @@
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  'https://www.googletagmanager.com/gtag/js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-PC56P86K');</script>
   <!-- End Google Tag Manager -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gemini Watermark Remover – Remove Gemini & Veo Watermarks</title>
-  <meta name="description" content="Remove supported visible Gemini and Veo watermarks in your browser. Images are free. Unlimited supported video processing is ₹99 in India or $1.09 internationally for 30 days." />
+  <title>Gemini Watermark Remover Online | Image & Video</title>
+  <meta name="description" content="Remove supported visible Gemini and Veo watermarks from images and videos in your browser. Images are free, the first 21 successful video cleanups are free, then ₹99 for 30 days." />
   <meta name="google-site-verification" content="gdMPc04QgAD3UA4_JkqEyzdXYkDt29wFQKE17OD6EgM" />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   <meta name="application-name" content="Gemini Watermark Remover" />
@@ -22,15 +22,15 @@
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
   <link rel="preconnect" href="https://sdk.cashfree.com" crossorigin />
 
-  <meta property="og:title" content="Gemini Watermark Remover – Images & Videos" />
-  <meta property="og:description" content="Free image cleanup plus unlimited supported video processing for 30 days. ₹99 in India or $1.09 internationally." />
+  <meta property="og:title" content="Gemini Watermark Remover Online – Images & Videos" />
+  <meta property="og:description" content="Browser-based visible Gemini and Veo watermark cleanup. Images free, first 21 successful video cleanups free, then ₹99 for 30 days." />
   <meta property="og:url" content="https://geminiwatermark.space/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="geminiwatermark.space" />
   <meta property="og:locale" content="en_US" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Gemini Watermark Remover" />
-  <meta name="twitter:description" content="Free image cleanup plus unlimited supported video processing for 30 days. ₹99 in India or $1.09 internationally." />
+  <meta name="twitter:title" content="Gemini Watermark Remover Online" />
+  <meta name="twitter:description" content="Remove supported visible Gemini and Veo watermarks in your browser. Images free and first 21 successful video cleanups free." />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
   <!-- Google tag (gtag.js) -->
@@ -66,11 +66,22 @@
         "browserRequirements":"Requires a modern JavaScript-enabled browser",
         "description":"Browser-based utility for removing supported visible Gemini and Veo watermarks from images and videos.",
         "isAccessibleForFree":true,
+        "featureList":["Free supported image cleanup","First 21 successful supported video cleanups free","Gemini diamond and legacy Veo video profiles","Browser-side media processing"],
         "offers":[
           {"@type":"Offer","name":"Image cleanup","price":"0","priceCurrency":"INR"},
-          {"@type":"Offer","name":"Unlimited supported video processing for 30 days","price":"99","priceCurrency":"INR"}
+          {"@type":"Offer","name":"30-day supported video plan after free allowance","price":"99","priceCurrency":"INR"}
         ],
         "isPartOf":{"@id":"https://geminiwatermark.space/#website"}
+      },
+      {
+        "@type":"FAQPage",
+        "@id":"https://geminiwatermark.space/#faq-schema",
+        "mainEntity":[
+          {"@type":"Question","name":"Can I remove a visible Gemini watermark from an image for free?","acceptedAnswer":{"@type":"Answer","text":"Supported image cleanup is free in the browser-based tool."}},
+          {"@type":"Question","name":"How many Gemini videos can I process for free?","acceptedAnswer":{"@type":"Answer","text":"The first 21 successfully processed supported videos are free on the current browser. After that, the 30-day video plan is required."}},
+          {"@type":"Question","name":"Does this remove SynthID?","acceptedAnswer":{"@type":"Answer","text":"No. The tool targets supported visible watermarks only and does not remove invisible SynthID or other provenance signals."}},
+          {"@type":"Question","name":"Does my media get uploaded?","acceptedAnswer":{"@type":"Answer","text":"The supported media-processing workflow runs in the browser. Payment data is handled separately by the payment provider when a paid plan is purchased."}}
+        ]
       }
     ]
   }
@@ -83,8 +94,36 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PC56P86K"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <div id="app"></div>
-  <noscript><main style="max-width:760px;margin:60px auto;padding:20px;font-family:Arial,sans-serif"><h1>Gemini Watermark Remover</h1><p>Remove supported visible Gemini and Veo watermarks from images and videos. Enable JavaScript to use the browser-based processing tool.</p><p>Images are free. Video upload and processing require the 30-day paid plan: ₹99 in India or $1.09 internationally, with no automatic renewal.</p><p><a href="/remove-gemini-watermark">Gemini watermark removal guide</a> · <a href="/gemini-video-watermark-remover">Gemini video watermark remover</a> · <a href="/veo-watermark-remover">Veo watermark remover</a> · <a href="/blog">Creator guides</a></p></main></noscript>
+
+  <div id="app">
+    <header class="nav wrap">
+      <a class="brand" href="#top"><span>✦</span> geminiwatermark.space</a>
+      <nav><a href="#tool">Remover</a><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+      <a class="navBtn" href="#tool">Remove watermark</a>
+    </header>
+    <main id="top">
+      <section class="hero wrap">
+        <div class="badge"><i></i> Images free · 21 videos free · then ₹99</div>
+        <h1>Gemini watermark.<br><span>Gone in seconds.</span></h1>
+        <p class="lead">Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Your first 21 successfully processed videos are free, then supported video processing unlocks with the ₹99 plan for 30 days.</p>
+        <section id="tool" class="tool">
+          <div class="toolHead"><div><small>VISIBLE WATERMARK REMOVER</small><h2>Gemini image and video watermark remover</h2><p>Use the interactive uploader after the page loads to process supported PNG, JPG, WebP, MP4, WebM and MOV files.</p></div><span class="local">● Local browser processing</span></div>
+        </section>
+        <p class="privacy">● Supported media processing stays on your device. Cashfree handles checkout data when you upgrade.</p>
+      </section>
+
+      <section id="how" class="section dark"><div class="wrap"><small>HOW IT WORKS</small><h2>Upload. Clean. Download.</h2><div class="steps"><article><b>01</b><h3>Upload</h3><p>Select a supported Gemini image or Gemini/Veo video from your device.</p></article><article><b>02</b><h3>Process</h3><p>The browser workflow targets the supported visible watermark profile.</p></article><article><b>03</b><h3>Download</h3><p>Preview the result and save the cleaned media to your device.</p></article></div></div></section>
+
+      <section id="pricing" class="section wrap"><small>PRICING</small><h2>Images free. 21 videos free.</h2><p class="sectionLead">Supported image cleanup is free. The first 21 successful supported video cleanups are free on this browser. After that, the ₹99 plan unlocks supported video processing for 30 days.</p></section>
+
+      <section class="section wrap"><small>GUIDES</small><h2>Gemini watermark removal guides</h2><p class="sectionLead">Read the <a href="/remove-gemini-watermark">Gemini watermark remover guide</a>, the <a href="/gemini-video-watermark-remover">Gemini video watermark remover guide</a>, the <a href="/veo-watermark-remover">Veo watermark remover guide</a>, or the latest guide on <a href="/blog/how-to-turn-off-gemini-visible-watermark">turning off the Gemini visible watermark in 2026</a>.</p></section>
+
+      <section id="faq" class="section faq wrap"><small>FAQ</small><h2>Gemini watermark remover FAQ.</h2><details open><summary>Can I remove a Gemini watermark from an image for free?</summary><p>Supported image cleanup is free in the current browser-based tool.</p></details><details><summary>How many videos can I process for free?</summary><p>The first 21 successfully processed supported videos are free on this browser. After that, the 30-day video plan is required.</p></details><details><summary>Does this remove SynthID?</summary><p>No. This tool handles supported visible watermarks only and does not remove invisible SynthID or other provenance signals.</p></details><details><summary>Does the tool upload my media?</summary><p>The supported media-processing workflow runs in the browser. Payment data is handled separately by the payment provider when a paid plan is purchased.</p></details></section>
+    </main>
+    <footer><div class="wrap"><b>✦ geminiwatermark.space</b><span>Independent utility · © 2026</span></div></footer>
+  </div>
+
+  <noscript><main style="max-width:760px;margin:60px auto;padding:20px;font-family:Arial,sans-serif"><h1>Gemini Watermark Remover Online</h1><p>Remove supported visible Gemini and Veo watermarks from images and videos. Enable JavaScript to use the browser-based processing tool.</p><p>Images are free. The first 21 successfully processed supported videos are free on this browser. After that, the 30-day video plan is ₹99 in India or the current international price, with no automatic renewal.</p><p><a href="/remove-gemini-watermark">Gemini watermark removal guide</a> · <a href="/gemini-video-watermark-remover">Gemini video watermark remover</a> · <a href="/veo-watermark-remover">Veo watermark remover</a> · <a href="/blog/how-to-turn-off-gemini-visible-watermark">Gemini Media watermark 2026</a> · <a href="/blog">Creator guides</a></p></main></noscript>
 
   <button id="gw-chat-launcher" type="button" aria-controls="gw-chat-panel" aria-expanded="false"><span class="dot"></span>Live Chat</button>
   <section id="gw-chat-panel" aria-label="Live support chat">
