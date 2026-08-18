@@ -5,6 +5,7 @@ const {
   maskPhone,
   maskEmail,
 } = require('../lib/cashfree');
+const { recordPaidEntitlement } = require('../lib/store');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -17,6 +18,14 @@ module.exports = async function handler(req, res) {
 
   if (!payload) {
     return res.status(200).json({ ok: true, active: false, reason: 'invalid' });
+  }
+
+  try {
+    await recordPaidEntitlement(payload);
+  } catch (error) {
+    // A valid paid token must keep working even if admin storage is temporarily
+    // unavailable. The next entitlement check will retry the backfill.
+    console.warn('Could not backfill paid entitlement into admin ledger.', error?.message || error);
   }
 
   return res.status(200).json({
