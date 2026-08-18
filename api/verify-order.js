@@ -9,6 +9,7 @@ const {
   maskEmail,
   sendError,
 } = require('../lib/cashfree');
+const { recordPaidEntitlement } = require('../lib/store');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -46,6 +47,13 @@ module.exports = async function handler(req, res) {
 
     const entitlementToken = signEntitlement(order, paidAt);
     const entitlement = inspectEntitlementToken(entitlementToken);
+
+    try {
+      await recordPaidEntitlement(entitlement);
+    } catch (error) {
+      // Payment verification should not be blocked by an admin/reporting write.
+      console.warn('Could not store paid order in admin ledger.', error?.message || error);
+    }
 
     return res.status(200).json({
       ok: true,
