@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/media-converter", "destination": "/media-converter-v2.html" },
     { "source": "/blog", "destination": "/blog.html" },
     { "source": "/blog/how-to-turn-off-gemini-visible-watermark", "destination": "/blog/how-to-turn-off-gemini-visible-watermark.html" },
     { "source": "/blog/clean-ai-video-without-cropping", "destination": "/blog/clean-ai-video-without-cropping.html" },
