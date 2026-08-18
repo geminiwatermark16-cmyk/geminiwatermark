@@ -73,6 +73,7 @@ style.textContent = `
   .gw-bg-panel.hidden{display:none}
   .gw-bg-panel .gw-bg-result-media{background-color:#f5f5f5;background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
   .gw-bg-panel #bgProgressBar{width:3%}
+  .gw-bg-native-hidden{display:none!important}
   @media(max-width:700px){#tool .tabs{overflow-x:auto;justify-content:flex-start;scrollbar-width:none}#tool .tabs::-webkit-scrollbar{display:none}#tool .tabs button{flex:0 0 auto;min-width:max-content}}
 `;
 document.head.appendChild(style);
@@ -119,9 +120,10 @@ function setNativeVisible(visible) {
   });
 }
 
-style.textContent += '.gw-bg-native-hidden{display:none!important}';
-
 function activateBackgroundMode() {
+  // Return the base tool to Image first so any other injected mode (for
+  // example Video Upscale) gets a chance to close itself cleanly.
+  imageTab.click();
   active = true;
   imageTab.classList.remove('active');
   videoTab.classList.remove('active');
@@ -143,8 +145,12 @@ function deactivateBackgroundMode() {
 }
 
 backgroundTab.addEventListener('click', activateBackgroundMode);
-imageTab.addEventListener('click', deactivateBackgroundMode);
-videoTab.addEventListener('click', deactivateBackgroundMode);
+// Capture clicks on every present/future tool tab so Remove BG never overlaps
+// another injected mode.
+tabs.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (active && button && button !== backgroundTab) deactivateBackgroundMode();
+}, { capture: true });
 
 async function loadBackgroundEngine() {
   if (!enginePromise) {
