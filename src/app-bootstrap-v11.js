@@ -47,6 +47,54 @@ if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
   window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v14-texture-smooth-watchdog';
 }
 
+// Ad traffic lands here primarily for video. Put Video first, make it the
+// default selected tool, and give it a clear visual priority without changing
+// image availability.
+function promoteVideoForAdTraffic() {
+  const tabs = document.querySelector('.tabs');
+  const videoTab = document.getElementById('videoTab');
+  const imageTab = document.getElementById('imageTab');
+  if (!tabs || !videoTab || !imageTab) return;
+
+  if (tabs.firstElementChild !== videoTab) tabs.insertBefore(videoTab, imageTab);
+  videoTab.classList.add('gw-video-priority');
+
+  // Use the app's own click handler so all mode state, upload accepts, quota
+  // copy and payment gating stay in sync.
+  if (!videoTab.classList.contains('active')) videoTab.click();
+}
+
+const videoPriorityStyle = document.createElement('style');
+videoPriorityStyle.textContent = `
+  #videoTab.gw-video-priority{
+    position:relative;
+    font-weight:800;
+    box-shadow:0 0 0 2px rgba(17,17,17,.12),0 10px 28px rgba(0,0,0,.12);
+  }
+  #videoTab.gw-video-priority::after{
+    content:'MOST POPULAR';
+    position:absolute;
+    top:-9px;
+    right:10px;
+    padding:3px 7px;
+    border-radius:999px;
+    background:#111;
+    color:#fff;
+    font-size:9px;
+    line-height:1;
+    letter-spacing:.08em;
+    font-weight:900;
+  }
+  #videoTab.gw-video-priority.active{
+    transform:translateY(-1px);
+  }
+  @media (max-width:640px){
+    #videoTab.gw-video-priority::after{right:7px;font-size:8px}
+  }
+`;
+document.head.appendChild(videoPriorityStyle);
+promoteVideoForAdTraffic();
+
 const TOKEN_KEY = 'gw_video_plan_token_v1';
 const DEFAULT_PLAN_PRICE = {
   country: 'IN',
@@ -225,7 +273,11 @@ function installRegionalCheckout() {
       }
 
       localStorage.setItem(TOKEN_KEY, verification.entitlementToken);
-      if (msg) msg.textContent = 'Payment verified. Video access is unlocked for 30 days.';
+      if (msg) msg.textContent = 'Payment verified. ₹99 video plan is ACTIVE for 30 days.';
+
+      // Keep the user on the video flow after successful payment. Reloading lets
+      // the core runtime validate the signed entitlement token and set its own
+      // paid state before processing starts.
       location.reload();
     } catch (error) {
       if (msg) msg.textContent = error?.message || 'Checkout could not be completed.';
@@ -247,10 +299,12 @@ async function loadRegionalPlanPrice() {
   }
   patchTrialAndRegionalCopy();
   installRegionalCheckout();
+  promoteVideoForAdTraffic();
 }
 
 patchTrialAndRegionalCopy();
 installRegionalCheckout();
+promoteVideoForAdTraffic();
 loadRegionalPlanPrice();
 
 const videoBadge = document.getElementById('videoBadge');
