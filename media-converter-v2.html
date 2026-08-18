@@ -3,71 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video & Audio Converter | geminiwatermark.space</title>
-  <meta name="description" content="Convert media you own or are authorized to use into MP3 or MP4. Upload a file or paste a direct media-file URL." />
+  <title>Instagram Reel & Pinterest Video Downloader | geminiwatermark.space</title>
+  <meta name="description" content="Download videos from public Instagram Reels/posts and Pinterest Pins. Paste a public post link to fetch the available video." />
   <meta name="robots" content="index,follow" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#0b0b0c" />
   <link rel="canonical" href="https://geminiwatermark.space/media-converter" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <style>
-    :root{--ink:#1f2933;--muted:#667085;--line:#e4e7ec;--soft:#f8fafc;--brand:#ff135c;--brand2:#df0f50;--green:#41b95e;--danger:#c73a4f}
-    *{box-sizing:border-box}body{margin:0;background:#f7f7f8;color:var(--ink);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}.wrap{width:min(1060px,calc(100% - 28px));margin:auto}.top{height:70px;display:flex;align-items:center;justify-content:space-between}.brand{text-decoration:none;color:#111827;font-weight:900;letter-spacing:-.03em}.back{text-decoration:none;color:#475467;font-size:14px}.card{background:#fff;border:1px solid #dfe3e8;box-shadow:0 8px 30px rgba(16,24,40,.06);margin:26px auto 70px;padding:58px 56px 44px;max-width:980px}.hero{text-align:center}.hero h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(38px,5vw,58px);font-weight:500;margin:0 0 42px;color:#273746}.search{display:grid;grid-template-columns:1fr 144px;max-width:720px;margin:0 auto}.search input{height:70px;border:5px solid var(--brand);border-right:0;padding:0 20px;font-size:18px;outline:none}.start{border:0;background:var(--brand);color:#fff;font-weight:900;font-size:17px;cursor:pointer}.start:hover{background:var(--brand2)}.terms{font-family:Georgia,"Times New Roman",serif;color:#6b7280;margin:12px 0 0}.terms b{color:var(--brand);font-weight:500}.or{display:flex;align-items:center;gap:12px;justify-content:center;color:#98a2b3;font-size:13px;margin:20px 0}.or:before,.or:after{content:"";height:1px;background:#e4e7ec;width:85px}.uploadBtn{border:1px solid #d0d5dd;background:#fff;color:#344054;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}.uploadBtn:hover{background:#f9fafb}.status{display:none;max-width:720px;margin:20px auto 0;padding:13px 14px;border-radius:9px;border:1px solid #d0d5dd;background:#f9fafb;text-align:left;color:#475467;font-size:14px}.status.show{display:block}.status.error{background:#fff4f5;border-color:#f1b7bf;color:#9e2f40}.status.good{background:#f1fff4;border-color:#b6dfc0;color:#286b37}.progress{display:none;max-width:720px;margin:10px auto 0;height:6px;background:#eef2f6;border-radius:999px;overflow:hidden}.progress.show{display:block}.progress i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}.result{display:none;margin-top:66px;grid-template-columns:370px 1fr;gap:40px;align-items:start}.result.show{display:grid}.previewCard{border:1px solid var(--line);background:#fff}.previewBox{aspect-ratio:16/10;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden}.previewBox video,.previewBox img{width:100%;height:100%;object-fit:contain;background:#000}.previewBox audio{width:92%}.placeholder{padding:26px;text-align:center;color:#fff}.placeholder .icon{font-size:44px;margin-bottom:12px}.placeholder b{display:block;margin-bottom:8px}.placeholder small{color:#d0d5dd;line-height:1.45}.meta{padding:14px 16px;border-top:1px solid var(--line);text-align:left}.meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta span{display:block;color:#98a2b3;font-size:13px;margin-top:5px}.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:0}.tab{border:1px solid var(--line);border-bottom:0;background:#f8fafc;color:#475467;padding:14px 24px;font-weight:900;cursor:pointer;margin-right:-1px}.tab.active{background:#fff;color:var(--brand)}.formats{border:1px solid var(--line)}.thead,.row{display:grid;grid-template-columns:1.4fr .8fr 1fr}.thead{background:#fbfcfd;color:#344054;font-weight:700;font-size:14px}.thead div,.row>div{padding:16px 18px;border-right:1px solid var(--line)}.thead div:last-child,.row>div:last-child{border-right:0}.row{border-top:1px solid var(--line);align-items:center}.row .type{font-size:18px}.row .format{color:#475467}.dl{border:0;background:var(--green);color:#fff;padding:12px 16px;border-radius:5px;font-weight:900;cursor:pointer;width:100%}.dl:disabled{opacity:.55;cursor:not-allowed}.legal{margin:32px auto 0;max-width:780px;color:#98a2b3;font-size:12px;line-height:1.55;text-align:center}.foot{padding:26px 0 40px;color:#98a2b3;font-size:13px}.foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}@media(max-width:800px){.card{padding:38px 18px}.search{grid-template-columns:1fr}.search input{border-right:5px solid var(--brand);height:62px}.start{height:54px}.result.show{grid-template-columns:1fr}.result{gap:24px}.previewCard{max-width:480px;width:100%;margin:auto}}@media(max-width:560px){.hero h1{font-size:36px;margin-bottom:28px}.thead,.row{grid-template-columns:1.2fr .65fr 1fr}.thead div,.row>div{padding:13px 10px}.row .type{font-size:15px}.dl{font-size:13px;padding:10px 8px}.card{margin-top:10px}}
+    :root{--bg:#09090b;--panel:#121215;--panel2:#19191e;--line:#2b2b33;--text:#f6f6f7;--muted:#9595a0;--accent:#fff;--green:#35c76f;--red:#ff5c74;--insta:#d946ef;--pin:#ef4444}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% -5%,#262632 0,#0c0c0f 34%,#09090b 100%);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input{font:inherit}a{color:inherit;text-decoration:none}.wrap{width:min(1080px,calc(100% - 28px));margin:auto}.top{height:72px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:900;letter-spacing:-.035em}.back{font-size:14px;color:#c3c3ca;border:1px solid var(--line);background:#111114;padding:10px 14px;border-radius:999px}.hero{text-align:center;padding:54px 0 28px}.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#111114;padding:8px 12px;border-radius:999px;color:#c7c7ce;font-size:13px}.badge i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 16px rgba(53,199,111,.55)}h1{font-size:clamp(44px,7.4vw,78px);line-height:.97;letter-spacing:-.065em;margin:23px auto 18px;max-width:900px}h1 span{color:#8b8b96}.lead{max-width:750px;margin:auto;color:var(--muted);font-size:18px;line-height:1.62}.shell{max-width:900px;margin:38px auto 86px;border:1px solid var(--line);background:rgba(17,17,20,.94);border-radius:28px;padding:18px;box-shadow:0 28px 90px rgba(0,0,0,.42)}.platforms{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0c0c0f;border:1px solid #24242a;padding:6px;border-radius:16px}.platform{border:0;background:transparent;color:#9999a4;border-radius:12px;padding:14px;font-weight:850;cursor:pointer}.platform.active{background:#25252c;color:#fff}.platform .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}.platform[data-platform="instagram"] .dot{background:var(--insta)}.platform[data-platform="pinterest"] .dot{background:var(--pin)}.form{padding:22px 4px 4px}.label{display:block;text-align:left;color:#bdbdc5;font-size:13px;margin:0 0 9px}.inputRow{display:grid;grid-template-columns:1fr auto auto;gap:10px}.input{width:100%;background:#0d0d10;border:1px solid #34343c;border-radius:15px;color:#fff;padding:16px 17px;font-size:15px;outline:none}.input:focus{border-color:#6c6c78}.paste,.go{border-radius:15px;padding:0 17px;font-weight:850;cursor:pointer}.paste{background:#232329;color:#fff;border:1px solid #383840}.go{background:#fff;color:#111;border:0;min-width:126px}.go:disabled{opacity:.5;cursor:not-allowed}.examples{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:13px 2px 0;color:#74747e;font-size:12px;text-align:left}.pill{border:1px solid #292930;background:#101013;border-radius:999px;padding:6px 9px}.status{display:none;margin-top:15px;padding:13px 14px;border-radius:14px;border:1px solid #2d2d34;background:#101013;color:#bdbdc5;text-align:left;font-size:14px;line-height:1.5}.status.show{display:block}.status.error{border-color:#60313a;background:#1a1013;color:#ff9daf}.status.good{border-color:#2d6040;background:#101a14;color:#92e2ae}.progress{display:none;height:6px;background:#232329;border-radius:999px;overflow:hidden;margin-top:10px}.progress.show{display:block}.progress i{display:block;height:100%;width:35%;background:#fff;border-radius:999px;animation:slide 1s ease-in-out infinite alternate}@keyframes slide{from{transform:translateX(-85%)}to{transform:translateX(240%)}}.result{display:none;margin-top:18px;border:1px solid #303038;background:#0e0e11;border-radius:20px;overflow:hidden;text-align:left}.result.show{display:grid;grid-template-columns:330px 1fr}.visual{min-height:260px;background:#050506;display:flex;align-items:center;justify-content:center;overflow:hidden}.visual img{width:100%;height:100%;min-height:260px;object-fit:cover}.visual video{width:100%;height:100%;min-height:260px;object-fit:contain;background:#000}.fallback{padding:30px;color:#c8c8d0;text-align:center}.fallback strong{display:block;font-size:38px;margin-bottom:8px}.info{padding:24px}.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#8f8f9a;font-weight:850}.info h2{font-size:25px;line-height:1.25;letter-spacing:-.03em;margin:8px 0 10px}.desc{color:#8f8f99;font-size:14px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.download,.secondary{display:inline-flex;align-items:center;justify-content:center;border-radius:14px;padding:14px 17px;font-weight:900;cursor:pointer}.download{border:0;background:var(--green);color:#08120b;min-width:170px}.secondary{border:1px solid #34343b;background:#17171b;color:#e4e4e8}.note{margin-top:15px;color:#70707a;font-size:12px;line-height:1.5}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px;margin:0 auto 80px}.feature{border-top:1px solid #25252c;padding-top:17px}.feature b{display:block;margin-bottom:6px}.feature span{color:#797984;font-size:14px;line-height:1.45}.foot{border-top:1px solid #202026;padding:27px 0 42px;color:#75757f;font-size:13px}.foot .wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}@media(max-width:760px){.hero{padding-top:38px}h1{font-size:49px}.lead{font-size:16px}.shell{padding:12px;border-radius:22px}.inputRow{grid-template-columns:1fr}.paste,.go{height:48px}.result.show{grid-template-columns:1fr}.visual,.visual img,.visual video{min-height:220px}.features{grid-template-columns:1fr}}@media(max-width:480px){.platform{font-size:13px;padding:12px 7px}.info{padding:18px}.info h2{font-size:21px}.download,.secondary{width:100%}}
   </style>
 </head>
 <body>
-  <header class="top wrap"><a class="brand" href="/">✦ geminiwatermark.space</a><a class="back" href="/">← Back to remover</a></header>
-  <main class="wrap">
-    <section class="card">
-      <div class="hero">
-        <h1>Convert Video and Audio</h1>
-        <div class="search"><input id="media-url" type="url" autocomplete="off" placeholder="Paste a direct media file URL"><button class="start" id="start">Start →</button></div>
-        <p class="terms">By using this tool you confirm you own the media or have permission to convert it.</p>
-        <div class="or">OR</div>
-        <input id="file" type="file" accept="video/*,audio/*,.mp4,.webm,.mov,.mkv,.m4a,.wav" hidden>
-        <button class="uploadBtn" id="upload">Upload a file</button>
-        <div class="status" id="status"></div><div class="progress" id="progress"><i id="bar"></i></div>
-      </div>
+  <header class="top wrap"><a class="brand" href="/">✦ geminiwatermark.space</a><a class="back" href="/">← Back</a></header>
+  <main>
+    <section class="hero wrap">
+      <div class="badge"><i></i> Social video downloader</div>
+      <h1>Instagram Reels &<br><span>Pinterest videos.</span></h1>
+      <p class="lead">Paste a public Instagram Reel/Post or Pinterest Pin link. We’ll look for the public video and give you a direct download option.</p>
 
-      <section class="result" id="result">
-        <div class="previewCard">
-          <div class="previewBox" id="preview"></div>
-          <div class="meta"><b id="filename">Media file</b><span id="filesize"></span></div>
+      <section class="shell">
+        <div class="platforms">
+          <button class="platform active" data-platform="instagram" type="button"><span class="dot"></span>Instagram Reel</button>
+          <button class="platform" data-platform="pinterest" type="button"><span class="dot"></span>Pinterest Video</button>
         </div>
-        <div>
-          <div class="tabs"><button class="tab active" data-kind="audio">♫ Audio</button><button class="tab" data-kind="video">▣ Video</button></div>
-          <div class="formats">
-            <div class="thead"><div>File type</div><div>Format</div><div>Action</div></div>
-            <div id="rows"></div>
+        <div class="form">
+          <label class="label" id="url-label" for="url">Instagram Reel/Post URL</label>
+          <div class="inputRow">
+            <input class="input" id="url" type="url" autocomplete="off" placeholder="https://www.instagram.com/reel/…">
+            <button class="paste" id="paste" type="button">Paste</button>
+            <button class="go" id="go" type="button">Get Video →</button>
           </div>
+          <div class="examples"><span>Supported:</span><span class="pill">Public Reels</span><span class="pill">Public video posts</span><span class="pill">Pinterest video Pins</span></div>
+          <div class="status" id="status"></div>
+          <div class="progress" id="progress"><i></i></div>
+
+          <section class="result" id="result">
+            <div class="visual" id="visual"></div>
+            <div class="info">
+              <div class="kicker" id="platform-name">Instagram</div>
+              <h2 id="title">Video ready</h2>
+              <div class="desc" id="description"></div>
+              <div class="actions">
+                <a class="download" id="download" href="#" target="_blank" rel="noopener noreferrer nofollow">↓ Download Video</a>
+                <a class="secondary" id="open-post" href="#" target="_blank" rel="noopener noreferrer nofollow">Open original</a>
+              </div>
+              <div class="note">If your browser opens the video instead of downloading it, use the browser’s save/download control. Private, login-only and image-only posts are not supported.</div>
+            </div>
+          </section>
         </div>
       </section>
-      <p class="legal">Only process media you created, own, or are authorized to download and convert. YouTube and other protected platform streams are not extracted by this tool. Direct media URLs may fail if the source blocks cross-origin browser access.</p>
+    </section>
+
+    <section class="features wrap">
+      <div class="feature"><b>Instagram Reels</b><span>Paste a public Reel or public video-post link and fetch the available video.</span></div>
+      <div class="feature"><b>Pinterest videos</b><span>Works with supported public Pinterest video Pins, including pin.it shared links.</span></div>
+      <div class="feature"><b>No account needed here</b><span>This downloader only attempts publicly accessible media and does not bypass private/login-only access.</span></div>
     </section>
   </main>
   <footer class="foot"><div class="wrap"><span>✦ geminiwatermark.space</span><span>Independent utility · © 2026</span></div></footer>
+
 <script>
 (() => {
-  const $=s=>document.querySelector(s);
-  const state={file:null,kind:'audio',ffmpeg:null,previewUrl:null,downloadUrl:null};
-  const status=$('#status'),progress=$('#progress'),bar=$('#bar'),result=$('#result'),preview=$('#preview'),urlInput=$('#media-url'),rows=$('#rows');
-  const isYT=v=>{try{const h=new URL(v).hostname.replace(/^www\./,'').toLowerCase();return h==='youtube.com'||h.endsWith('.youtube.com')||h==='youtu.be'||h==='music.youtube.com'}catch{return false}};
-  function setStatus(m,t=''){status.textContent=m;status.className='status show'+(t?' '+t:'')}
-  function setProgress(v){progress.classList.add('show');bar.style.width=Math.max(0,Math.min(100,v))+'%'}
-  function resetProgress(){progress.classList.remove('show');bar.style.width='0%'}
-  function size(n){if(!n)return '';const u=['B','KB','MB','GB'];let i=0,v=n;while(v>=1024&&i<u.length-1){v/=1024;i++}return v.toFixed(i?1:0)+' '+u[i]}
-  function base(n){return(n||'media').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'')||'media'}
-  function cleanup(){if(state.previewUrl){URL.revokeObjectURL(state.previewUrl);state.previewUrl=null}if(state.downloadUrl){URL.revokeObjectURL(state.downloadUrl);state.downloadUrl=null}}
-  function showFile(file){cleanup();state.file=file;state.previewUrl=URL.createObjectURL(file);$('#filename').textContent=file.name||'media';$('#filesize').textContent=size(file.size);preview.innerHTML='';const media=file.type.startsWith('audio/')?document.createElement('audio'):document.createElement('video');media.controls=true;media.src=state.previewUrl;preview.appendChild(media);result.classList.add('show');renderRows();setStatus('Media ready. Choose Audio or Video and a quality option.','good');resetProgress()}
-  function showYT(){cleanup();state.file=null;result.classList.add('show');$('#filename').textContent='YouTube link detected';$('#filesize').textContent='Upload/export the source file to continue';preview.innerHTML='<div class="placeholder"><div class="icon">▶</div><b>YouTube stream extraction is not enabled</b><small>If this is your video or you have permission to use it, save/export the source file and upload it here.</small><br><br><button class="uploadBtn" id="uploadInside">Upload file</button></div>';rows.innerHTML='<div class="row"><div class="type">Upload required</div><div class="format">—</div><div><button class="dl" id="uploadAction">Upload File</button></div></div>';setStatus('YouTube links cannot be extracted here. Upload an authorized source file instead.','error');setTimeout(()=>{const a=$('#uploadInside'),b=$('#uploadAction');if(a)a.onclick=()=>$('#file').click();if(b)b.onclick=()=>$('#file').click()},0)}
-  function renderRows(){if(!state.file)return;const opts=state.kind==='audio'?[['MP3 - 320kbps','320'],['MP3 - 256kbps','256'],['MP3 - 192kbps','192'],['MP3 - 128kbps','128']]:[['MP4 - 1080p','1080'],['MP4 - 720p','720'],['MP4 - 480p','480']];rows.innerHTML=opts.map(([label,q])=>'<div class="row"><div class="type">'+label+'</div><div class="format">'+(state.kind==='audio'?'MP3':'MP4')+'</div><div><button class="dl" data-q="'+q+'">⇩ Download</button></div></div>').join('');rows.querySelectorAll('.dl').forEach(b=>b.onclick=()=>convert(b,b.dataset.q))}
-  async function getFromUrl(){const u=urlInput.value.trim();if(!u)throw new Error('Paste a direct media URL first.');if(isYT(u)){showYT();return null}let r;try{r=await fetch(u)}catch{throw new Error('Could not fetch that URL. The source may block browser access (CORS). Try uploading the file instead.')}if(!r.ok)throw new Error('The media URL returned HTTP '+r.status+'.');const blob=await r.blob();const name=decodeURIComponent(new URL(u).pathname.split('/').pop()||'media.bin').split('?')[0];return new File([blob],name,{type:blob.type||'application/octet-stream'})}
-  function load(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-src="'+src+'"]'))return ok();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;s.onload=ok;s.onerror=()=>no(new Error('Could not load the browser conversion engine.'));document.head.appendChild(s)})}
-  async function engine(){if(state.ffmpeg)return state.ffmpeg;setStatus('Loading browser conversion engine on first use...');setProgress(4);await load('https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');if(!window.FFmpeg||!window.FFmpeg.createFFmpeg)throw new Error('Conversion engine could not initialize.');const f=window.FFmpeg.createFFmpeg({log:false,corePath:'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',progress:({ratio})=>setProgress(10+Math.round(Math.max(0,Math.min(1,ratio||0))*82))});await f.load();state.ffmpeg=f;return f}
-  async function convert(button,q){if(!state.file)return;document.querySelectorAll('.dl').forEach(x=>x.disabled=true);resetProgress();try{const file=state.file;if(file.size>550*1024*1024)throw new Error('This browser converter is limited to about 500 MB per file.');const lower=file.name.toLowerCase(),b=base(file.name);if(state.kind==='video'&&q==='1080'&&(file.type==='video/mp4'||lower.endsWith('.mp4'))){const u=URL.createObjectURL(file);state.downloadUrl=u;const a=document.createElement('a');a.href=u;a.download=b+'.mp4';a.click();setStatus('MP4 download started.','good');setProgress(100);return}const f=await engine();const ext=(lower.match(/\.([a-z0-9]{2,5})$/)||[,'bin'])[1],input='input.'+ext,output=state.kind==='audio'?'output.mp3':'output.mp4';f.FS('writeFile',input,await window.FFmpeg.fetchFile(file));if(state.kind==='audio'){setStatus('Creating MP3 at '+q+' kbps...');await f.run('-i',input,'-vn','-b:a',q+'k',output)}else{setStatus('Creating MP4 at up to '+q+'p...');await f.run('-i',input,'-vf','scale=-2:min('+q+',ih)','-movflags','+faststart',output)}const data=f.FS('readFile',output),mime=state.kind==='audio'?'audio/mpeg':'video/mp4',blob=new Blob([data.buffer],{type:mime}),u=URL.createObjectURL(blob);state.downloadUrl=u;const a=document.createElement('a');a.href=u;a.download=b+'.'+(state.kind==='audio'?'mp3':'mp4');document.body.appendChild(a);a.click();a.remove();setProgress(100);setStatus('Conversion complete. Download started.','good');try{f.FS('unlink',input);f.FS('unlink',output)}catch{}}catch(e){setStatus(e.message||'Conversion failed.','error')}finally{document.querySelectorAll('.dl').forEach(x=>x.disabled=false)}}
-  $('#start').onclick=async()=>{resetProgress();try{const f=await getFromUrl();if(f)showFile(f)}catch(e){setStatus(e.message,'error')}};
-  $('#upload').onclick=()=>$('#file').click();$('#file').onchange=()=>{const f=$('#file').files[0];if(f)showFile(f)};
-  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.kind=t.dataset.kind;renderRows()});
-  urlInput.addEventListener('keydown',e=>{if(e.key==='Enter')$('#start').click()});
+  const $ = (s) => document.querySelector(s);
+  const state = { platform: 'instagram', data: null };
+  const buttons = [...document.querySelectorAll('.platform')];
+  const input = $('#url');
+  const go = $('#go');
+  const status = $('#status');
+  const progress = $('#progress');
+  const result = $('#result');
+
+  function setStatus(message, type = '') {
+    status.textContent = message;
+    status.className = 'status show' + (type ? ' ' + type : '');
+  }
+
+  function clearResult() {
+    result.classList.remove('show');
+    $('#visual').innerHTML = '';
+    state.data = null;
+  }
+
+  function setPlatform(name) {
+    state.platform = name;
+    buttons.forEach((b) => b.classList.toggle('active', b.dataset.platform === name));
+    const instagram = name === 'instagram';
+    $('#url-label').textContent = instagram ? 'Instagram Reel/Post URL' : 'Pinterest Pin URL';
+    input.placeholder = instagram ? 'https://www.instagram.com/reel/…' : 'https://www.pinterest.com/pin/…';
+    input.value = '';
+    status.className = 'status';
+    clearResult();
+  }
+
+  function inferPlatform(url) {
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      if (host.includes('instagram') || host.includes('instagr.am')) return 'instagram';
+      if (host.includes('pinterest') || host === 'pin.it' || host === 'www.pin.it') return 'pinterest';
+    } catch {}
+    return null;
+  }
+
+  function render(data) {
+    state.data = data;
+    $('#platform-name').textContent = data.platform === 'instagram' ? 'Instagram Reel / Post' : 'Pinterest Video Pin';
+    $('#title').textContent = data.title || 'Video ready';
+    $('#description').textContent = data.description || 'Public video found and ready to open or download.';
+    $('#download').href = data.videoUrl;
+    $('#download').setAttribute('download', data.platform + '-video.mp4');
+    $('#open-post').href = data.finalUrl || input.value.trim();
+
+    const visual = $('#visual');
+    visual.innerHTML = '';
+    if (data.thumbnail) {
+      const img = document.createElement('img');
+      img.src = data.thumbnail;
+      img.alt = data.title || 'Video preview';
+      img.referrerPolicy = 'no-referrer';
+      img.onerror = () => { visual.innerHTML = '<div class="fallback"><strong>▶</strong>Video found</div>'; };
+      visual.appendChild(img);
+    } else {
+      visual.innerHTML = '<div class="fallback"><strong>▶</strong>Video found</div>';
+    }
+
+    result.classList.add('show');
+    setStatus('Video found. Use Download Video below.', 'good');
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function extract() {
+    const url = input.value.trim();
+    if (!url) return setStatus('Paste an Instagram Reel/Post or Pinterest Pin URL first.', 'error');
+    const platform = inferPlatform(url);
+    if (!platform) return setStatus('Only Instagram and Pinterest links are supported.', 'error');
+    if (platform !== state.platform) setPlatform(platform), input.value = url;
+
+    go.disabled = true;
+    progress.classList.add('show');
+    clearResult();
+    setStatus('Checking the public post and looking for its video…');
+
+    try {
+      const response = await fetch('/api/social-extract', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.message || 'Could not find a downloadable video in that post.');
+      render(data);
+    } catch (error) {
+      setStatus(error.message || 'Could not extract this video. Try another public post.', 'error');
+    } finally {
+      progress.classList.remove('show');
+      go.disabled = false;
+    }
+  }
+
+  buttons.forEach((button) => button.addEventListener('click', () => setPlatform(button.dataset.platform)));
+  $('#paste').addEventListener('click', async () => {
+    try {
+      input.value = await navigator.clipboard.readText();
+      const platform = inferPlatform(input.value.trim());
+      if (platform && platform !== state.platform) {
+        const value = input.value;
+        setPlatform(platform);
+        input.value = value;
+      }
+      setStatus('Link pasted. Tap Get Video.');
+    } catch {
+      input.focus();
+      setStatus('Clipboard permission was blocked. Paste the link manually.');
+    }
+  });
+  go.addEventListener('click', extract);
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter') extract(); });
 })();
 </script>
 </body>
