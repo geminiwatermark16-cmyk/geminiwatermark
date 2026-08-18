@@ -1,6 +1,7 @@
 const {
   PLAN_DURATION_DAYS,
   inspectEntitlementToken,
+  planLabelFromPayment,
   maskPhone,
   maskEmail,
 } = require('../lib/cashfree');
@@ -23,7 +24,7 @@ module.exports = async function handler(req, res) {
     active: Boolean(payload.active),
     expired: Boolean(payload.expired),
     orderId: payload.orderId,
-    plan: '₹99 Video — 30 days',
+    plan: planLabelFromPayment(payload.amount, payload.currency),
     planId: payload.plan,
     durationDays: PLAN_DURATION_DAYS,
     paidAt: new Date(payload.paidAt).toISOString(),
