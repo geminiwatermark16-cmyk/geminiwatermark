@@ -1,8 +1,8 @@
 const {
-  PLAN_AMOUNT,
-  PLAN_CURRENCY,
   PLAN_DURATION_DAYS,
   cashfreeRequest,
+  isPlanPayment,
+  planLabelFromPayment,
   signEntitlement,
   inspectEntitlementToken,
   maskPhone,
@@ -25,8 +25,7 @@ module.exports = async function handler(req, res) {
 
     const order = await cashfreeRequest(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
     const paid = order.order_status === 'PAID'
-      && Number(order.order_amount) === PLAN_AMOUNT
-      && order.order_currency === PLAN_CURRENCY;
+      && isPlanPayment(order.order_amount, order.order_currency);
 
     if (!paid) {
       return res.status(200).json({ ok: true, paid: false, status: order.order_status || 'UNKNOWN' });
@@ -55,7 +54,7 @@ module.exports = async function handler(req, res) {
       orderId: order.order_id,
       entitlementToken,
       account: {
-        plan: '₹99 Video — 30 days',
+        plan: planLabelFromPayment(order.order_amount, order.order_currency),
         durationDays: PLAN_DURATION_DAYS,
         paidAt: new Date(entitlement.paidAt).toISOString(),
         expiresAt: new Date(entitlement.expiresAt).toISOString(),
