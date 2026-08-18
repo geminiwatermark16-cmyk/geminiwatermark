@@ -9,8 +9,8 @@ const waitFor = async (selector, timeout = 10000) => {
 };
 
 const panel = await waitFor('#upscalePanel');
-if (panel && panel.dataset.aiSuperResolution !== 'v5') {
-  panel.dataset.aiSuperResolution = 'v5';
+if (panel && panel.dataset.aiSuperResolution !== 'v7-fast') {
+  panel.dataset.aiSuperResolution = 'v7-fast';
 
   const $ = (id) => document.getElementById(id);
   const message = $('upscaleMessage');
@@ -34,28 +34,27 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     return clone;
   };
 
-  // Clone the buttons so old resize-only / recorder click handlers cannot fire.
   const startButton = replaceButton('upscaleStart');
   const downloadButton = replaceButton('upscaleDownload');
 
-  if (startButton) startButton.textContent = 'AI Upscale 2× — MAX Quality ✦';
+  if (startButton) startButton.textContent = 'AI Upscale 2× — FAST ✦';
   if (downloadButton) downloadButton.textContent = 'Download AI MP4 ↓';
 
   const tab = $('upscaleTab');
-  if (tab) tab.innerHTML = '<span>Video Upscale</span><b>AI 2× MAX</b><i>REAL AI</i>';
+  if (tab) tab.innerHTML = '<span>Video Upscale</span><b>AI 2× FAST</b><i>REAL AI</i>';
 
   const heroSmall = panel.querySelector('.gwUpscaleHero small');
   const heroTitle = panel.querySelector('.gwUpscaleHero h2');
   const heroCopy = panel.querySelector('.gwUpscaleHero p');
   const heroPill = panel.querySelector('.gwUpscalePill');
-  if (heroSmall) heroSmall.textContent = 'AI SUPER RESOLUTION · ESRGAN MEDIUM';
-  if (heroTitle) heroTitle.textContent = 'Real 2× AI enhancement with stronger texture recovery';
-  if (heroCopy) heroCopy.textContent = 'MAX Quality mode uses the heavier ESRGAN Medium neural model on every frame, extra patch overlap to reduce seams, and a high-bitrate H.264 MP4 encode to preserve the recovered detail.';
-  if (heroPill) heroPill.textContent = '✦ MAX Quality';
+  if (heroSmall) heroSmall.textContent = 'FAST AI SUPER RESOLUTION · ESRGAN';
+  if (heroTitle) heroTitle.textContent = 'Real 2× AI enhancement — tuned for much faster processing';
+  if (heroCopy) heroCopy.textContent = 'Fast mode still uses neural super-resolution on every frame, but switches to the lighter ESRGAN Slim model and larger GPU patches so 1080p-style clips finish much faster in the browser.';
+  if (heroPill) heroPill.textContent = '⚡ Fast AI';
 
   const trust = panel.querySelector('.gwUpscaleTrust');
   if (trust) {
-    trust.innerHTML = '<span>● On-device AI</span><span>ESRGAN Medium</span><span>2× neural detail</span><span>High-bitrate MP4</span>';
+    trust.innerHTML = '<span>● On-device AI</span><span>ESRGAN Slim</span><span>2× neural detail</span><span>Fast GPU patches</span><span>MP4 output</span>';
   }
 
   let selectedFile = fileInput?.files?.[0] || null;
@@ -99,8 +98,6 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     return /\.(mp4|webm|mov|m4v)$/i.test(file.name || '');
   };
 
-  // v1 keeps drag/drop files in a private closure. Capture the same file here so
-  // the AI button works identically for click-to-browse and drag/drop.
   fileInput?.addEventListener('change', () => {
     const picked = fileInput.files?.[0];
     if (picked) selectedFile = picked;
@@ -118,8 +115,6 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     clearResult();
   });
 
-  // Final fallback: if an earlier handler already loaded a blob preview, recover
-  // that exact local video back into a File instead of incorrectly saying no file.
   const resolveSourceFile = async () => {
     const inputFile = fileInput?.files?.[0];
     if (isVideoLike(inputFile)) {
@@ -133,8 +128,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
       const response = await fetch(previewSrc);
       if (!response.ok) throw new Error('Could not reopen the selected local video. Choose the video again.');
       const blob = await response.blob();
-      const fallbackName = 'selected-video.mp4';
-      selectedFile = new File([blob], fallbackName, {
+      selectedFile = new File([blob], 'selected-video.mp4', {
         type: blob.type || 'video/mp4',
         lastModified: Date.now(),
       });
@@ -173,8 +167,8 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     if (loadingPromise) return loadingPromise;
 
     loadingPromise = (async () => {
-      if (processingTitle) processingTitle.textContent = 'Loading MAX Quality AI model…';
-      setProgress(0.02, 'TensorFlow.js + ESRGAN Medium 2×');
+      if (processingTitle) processingTitle.textContent = 'Loading Fast AI model…';
+      setProgress(0.02, 'TensorFlow.js + ESRGAN Slim 2×');
 
       await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js', () => Boolean(window.tf));
       await window.tf.ready();
@@ -183,16 +177,16 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
       } catch {}
 
       await Promise.all([
-        loadScript('https://cdn.jsdelivr.net/npm/@upscalerjs/esrgan-medium@latest/dist/umd/2x.min.js', () => Boolean(window.ESRGANMedium2x)),
+        loadScript('https://cdn.jsdelivr.net/npm/@upscalerjs/esrgan-slim@latest/dist/umd/2x.min.js', () => Boolean(window.ESRGANSlim2x)),
         loadScript('https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/umd/upscaler.min.js', () => Boolean(window.Upscaler)),
       ]);
 
-      setProgress(0.05, 'Loading high-quality MP4 pipeline');
+      setProgress(0.05, 'Loading MP4 pipeline');
       mediaLib = await import('https://cdn.jsdelivr.net/npm/mediabunny@1.52.2/+esm');
-      aiUpscaler = new window.Upscaler({ model: window.ESRGANMedium2x });
+      aiUpscaler = new window.Upscaler({ model: window.ESRGANSlim2x });
 
       if (typeof aiUpscaler.warmup === 'function') {
-        await aiUpscaler.warmup({ patchSize: 64, padding: 5 }, { awaitNextFrame: true });
+        await aiUpscaler.warmup({ patchSize: 128, padding: 3 }, { awaitNextFrame: false });
       }
 
       return { mediaLib, aiUpscaler };
@@ -235,9 +229,9 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     if (anotherButton) anotherButton.disabled = true;
     if (fileInput) fileInput.disabled = true;
     if (processing) processing.classList.remove('hidden');
-    if (processingTitle) processingTitle.textContent = 'Starting MAX Quality AI enhancement…';
-    setProgress(0, 'Preparing video and ESRGAN Medium');
-    setMessage('MAX Quality AI started. Keep this tab open while each frame is enhanced.');
+    if (processingTitle) processingTitle.textContent = 'Starting Fast AI enhancement…';
+    setProgress(0, 'Preparing video and ESRGAN Slim');
+    setMessage('Fast AI started. This keeps real neural 2× enhancement but uses a lighter model and larger GPU patches.');
 
     let inputCanvas;
     let inputContext;
@@ -258,7 +252,7 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
       const outHeight = sourceHeight * 2;
       if (!sourceWidth || !sourceHeight) throw new Error('Could not read video dimensions.');
       if (Math.max(outWidth, outHeight) > 4096) {
-        throw new Error(`AI 2× output would be ${outWidth}×${outHeight}. MAX Quality browser mode currently supports up to a 4096px long edge.`);
+        throw new Error(`AI 2× output would be ${outWidth}×${outHeight}. Fast browser mode currently supports up to a 4096px long edge.`);
       }
 
       inputCanvas = makeCanvas(sourceWidth, sourceHeight);
@@ -272,8 +266,8 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
       });
 
       const targetBitrate = Math.min(
-        50_000_000,
-        Math.max(16_000_000, Math.round(outWidth * outHeight * 5))
+        36_000_000,
+        Math.max(12_000_000, Math.round(outWidth * outHeight * 4))
       );
 
       let conversionProgress = 0;
@@ -295,16 +289,16 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
             inputContext.clearRect(0, 0, sourceWidth, sourceHeight);
             sample.draw(inputContext, 0, 0, sourceWidth, sourceHeight);
 
-            if (processingTitle) processingTitle.textContent = `MAX AI enhancing frame ${frameNumber}`;
+            if (processingTitle) processingTitle.textContent = `Fast AI enhancing frame ${frameNumber}`;
             const enhanced = await upscaler.upscale(inputCanvas, {
               output: 'tensor',
-              patchSize: 64,
-              padding: 5,
-              awaitNextFrame: true,
+              patchSize: 128,
+              padding: 3,
+              awaitNextFrame: false,
               progress: (patchProgress) => {
                 const base = Math.min(0.96, Math.max(0.06, conversionProgress));
                 const micro = Math.min(0.025, Number(patchProgress || 0) * 0.025);
-                setProgress(base + micro, `ESRGAN Medium texture recovery · ${Math.round(Number(patchProgress || 0) * 100)}% of current frame`);
+                setProgress(base + micro, `Fast ESRGAN neural detail · ${Math.round(Number(patchProgress || 0) * 100)}% of current frame`);
               },
             });
 
@@ -321,10 +315,10 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
 
       conversion.onProgress = (progress) => {
         conversionProgress = Math.max(conversionProgress, Number(progress || 0));
-        setProgress(Math.max(0.06, conversionProgress), `Frame-by-frame MAX Quality AI · ${Math.round(conversionProgress * 100)}%`);
+        setProgress(Math.max(0.06, conversionProgress), `Fast frame-by-frame AI · ${Math.round(conversionProgress * 100)}%`);
       };
 
-      if (processingTitle) processingTitle.textContent = 'MAX Quality AI enhancing every frame…';
+      if (processingTitle) processingTitle.textContent = 'Fast AI enhancing every frame…';
       await conversion.execute();
 
       const buffer = target.buffer;
@@ -336,12 +330,12 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
         afterVideo.src = resultUrl;
         afterVideo.classList.remove('hidden');
       }
-      if (outputMeta) outputMeta.textContent = `${outWidth}×${outHeight} · AI MAX · ${(resultBlob.size / 1024 / 1024).toFixed(1)} MB`;
+      if (outputMeta) outputMeta.textContent = `${outWidth}×${outHeight} · AI FAST · ${(resultBlob.size / 1024 / 1024).toFixed(1)} MB`;
       if (processing) processing.classList.add('hidden');
       if (startButton) startButton.classList.add('hidden');
       if (downloadButton) downloadButton.classList.remove('hidden');
-      setProgress(1, 'MAX Quality AI super resolution complete');
-      setMessage(`ESRGAN Medium 2× AI enhancement is ready. MP4 target bitrate: ${(targetBitrate / 1_000_000).toFixed(0)} Mbps.`, 'ok');
+      setProgress(1, 'Fast AI super resolution complete');
+      setMessage(`Fast ESRGAN 2× enhancement is ready. MP4 target bitrate: ${(targetBitrate / 1_000_000).toFixed(0)} Mbps.`, 'ok');
     } catch (error) {
       if (processing) processing.classList.add('hidden');
       setMessage(error?.message || 'AI upscaling failed. Please retry in the latest Chrome or Edge.', 'error');
@@ -362,10 +356,10 @@ if (panel && panel.dataset.aiSuperResolution !== 'v5') {
     const base = selectedName.replace(/\.[^.]+$/, '') || 'video';
     const a = document.createElement('a');
     a.href = resultUrl;
-    a.download = `${base}-ai-max-2x.mp4`;
+    a.download = `${base}-ai-fast-2x.mp4`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setMessage('MAX Quality AI-enhanced MP4 downloaded.', 'ok');
+    setMessage('Fast AI-enhanced MP4 downloaded.', 'ok');
   });
 }
