@@ -5,6 +5,7 @@
     ['/gemini-video-watermark-remover', 'Gemini video remover'],
     ['/google-flow-watermark-remover', 'Google Flow remover'],
     ['/veo-watermark-remover', 'Veo watermark remover'],
+    ['/media-converter.html', 'Video to MP3 / MP4 converter'],
     ['/blog/how-to-turn-off-gemini-visible-watermark', 'Gemini Media watermark 2026'],
     ['/blog', 'Creator guides'],
     ['/blog/clean-ai-video-without-cropping', '1080×1920 video guide'],
