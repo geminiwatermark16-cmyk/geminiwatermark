@@ -1,4 +1,7 @@
-await import('./video-deep-clean.js?v=20260818-10');
+await Promise.all([
+  import('./video-deep-clean.js?v=20260818-10'),
+  import('./video-clean-adaptive-v1.js?v=20260818-1')
+]);
 
 const mainUrl = new URL('./main-fixed.js?v=20260818-10', import.meta.url);
 const response = await fetch(mainUrl, { cache: 'no-store' });
@@ -7,7 +10,22 @@ let source = await response.text();
 
 const processNeedle = "const blob = await engine.processVideoFile(state.file, options);";
 const processReplacement = `let blob;
-  if (profile === 'diamond' && state.videoSize?.width === 1080 && state.videoSize?.height === 1920 && typeof window.__GW_EXACT_CLEAN_STORY_VIDEO__ === 'function') {
+  const adaptiveDiamond = profile === 'diamond' && (
+    (state.videoSize?.width === 720 && state.videoSize?.height === 1280) ||
+    (state.videoSize?.width === 1080 && state.videoSize?.height === 1920)
+  );
+  if (adaptiveDiamond && typeof window.__GW_ADAPTIVE_CLEAN_STORY_VIDEO__ === 'function') {
+    $('processingTitle').textContent = 'Removing Gemini diamond…';
+    $('processingSub').textContent = state.videoSize?.width === 720
+      ? '720×1280 adaptive cleanup · smoothing artifacts'
+      : '1080×1920 adaptive cleanup · smoothing artifacts';
+    blob = await window.__GW_ADAPTIVE_CLEAN_STORY_VIDEO__(state.file, {
+      onProgress: (progress) => {
+        const pct = Math.max(3, Math.min(100, Number(progress || 0) * 100));
+        $('progressBar').style.width = pct + '%';
+      }
+    });
+  } else if (profile === 'diamond' && state.videoSize?.width === 1080 && state.videoSize?.height === 1920 && typeof window.__GW_EXACT_CLEAN_STORY_VIDEO__ === 'function') {
     $('processingTitle').textContent = 'Removing Gemini diamond…';
     $('processingSub').textContent = 'Exact reverse-alpha · no blur or patch';
     blob = await window.__GW_EXACT_CLEAN_STORY_VIDEO__(state.file, {
@@ -22,6 +40,15 @@ const processReplacement = `let blob;
 
 if (!source.includes(processNeedle)) throw new Error('Video cleanup hook could not be installed.');
 source = source.replace(processNeedle, processReplacement);
+
+source = source.replace(
+  "if (profile === 'diamond' && width === 1080 && height === 1920) return '1080×1920 story format detected · supported new Gemini profile.';",
+  "if (profile === 'diamond' && [[720,1280],[1080,1920]].some(([w,h]) => w === width && h === height)) return `${width}×${height} story format detected · supported new Gemini diamond profile.`;"
+);
+source = source
+  .replace('1080×1920 portrait recommended · MP4/WebM/MOV', '720×1280 or 1080×1920 portrait · MP4/WebM/MOV')
+  .replace('<li>1080×1920 story/reel support</li>', '<li>720×1280 + 1080×1920 story/reel support</li>')
+  .replace('Most story/reel clips are 1080×1920 portrait, which is supported by the current Gemini diamond profile.', '720×1280 and 1080×1920 portrait clips are supported by the current Gemini diamond profile.');
 
 const downloadNeedle = "a.download = state.mode === 'image' ? 'geminiwatermark-clean.png' : 'geminiwatermark-clean.mp4';";
 const downloadReplacement = "a.download = state.mode === 'image' ? 'geminiwatermark-clean.png' : (state.result?.type?.includes('webm') ? 'geminiwatermark-clean.webm' : 'geminiwatermark-clean.mp4');";
