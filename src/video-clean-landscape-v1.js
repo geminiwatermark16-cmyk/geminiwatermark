@@ -1,5 +1,5 @@
 const BASE = { width: 1920, height: 1080, x: 1676, y: 836, roi: 136, outer: 58, inner: 23 };
-const FPS = 24;
+const FALLBACK_CAPTURE_FPS = 60;
 const TEMPORAL_MAX_DIFF = 26;
 const TEMPORAL_BLEND = 0.10;
 
@@ -194,6 +194,24 @@ function safeStopRecorder(recorder) {
   }
 }
 
+function makeCanvasCapture(canvas) {
+  // Manual frame capture keeps the output cadence tied to the source video's
+  // decoded frames instead of forcing every result to 24 fps. Chromium exposes
+  // requestFrame() on CanvasCaptureMediaStreamTrack, which lets us emit one
+  // encoded frame for every requestVideoFrameCallback from the source video.
+  let stream = canvas.captureStream(0);
+  let track = stream.getVideoTracks()[0] || null;
+  let manual = Boolean(track && typeof track.requestFrame === 'function');
+
+  if (!manual) {
+    try { stream.getTracks().forEach((item) => item.stop()); } catch {}
+    stream = canvas.captureStream(FALLBACK_CAPTURE_FPS);
+    track = stream.getVideoTracks()[0] || null;
+  }
+
+  return { stream, track, manual };
+}
+
 export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
   if (!(inputBlob instanceof Blob) || inputBlob.size === 0) throw new Error('Video file is empty.');
   if (!('MediaRecorder' in window)) throw new Error('Video cleanup requires current Chrome or Edge.');
@@ -215,9 +233,12 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
 
   let recorder = null;
   let canvasStream = null;
+  let canvasTrack = null;
+  let manualCapture = false;
   let capturedStream = null;
   let watchdog = 0;
   let cancelled = false;
+  let renderError = null;
 
   try {
     if (video.readyState < 1) await waitForEvent(video, 'loadedmetadata', 10000, 'Video metadata could not be loaded.');
@@ -233,7 +254,11 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
 
     let previous = null;
     let lastTime = NaN;
-    canvasStream = canvas.captureStream(FPS);
+    const capture = makeCanvasCapture(canvas);
+    canvasStream = capture.stream;
+    canvasTrack = capture.track;
+    manualCapture = capture.manual;
+
     capturedStream = typeof video.captureStream === 'function'
       ? video.captureStream()
       : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
@@ -244,7 +269,7 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
     const mimeType = recorderMime();
     recorder = new MediaRecorder(outputStream, {
       ...(mimeType ? { mimeType } : {}),
-      videoBitsPerSecond: video.videoWidth >= 1920 ? 14_000_000 : 8_000_000,
+      videoBitsPerSecond: video.videoWidth >= 1920 ? 18_000_000 : 10_000_000,
       audioBitsPerSecond: 192_000,
     });
 
@@ -255,17 +280,21 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
     recorder.onstop = () => stoppedResolve();
     recorder.onerror = () => stoppedResolve();
 
-    const drawClean = () => {
+    const drawClean = (emitFrame = true) => {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const { x, y, width, height } = config.roi;
       const roi = ctx.getImageData(x, y, width, height);
       const cleaned = cleanRoi(roi, mask, donorPlan, previous);
-      const isNewFrame = !Number.isFinite(lastTime) || Math.abs(video.currentTime - lastTime) > 0.001;
+      const isNewFrame = !Number.isFinite(lastTime) || Math.abs(video.currentTime - lastTime) > 0.0001;
       if (isNewFrame) {
         previous = new Uint8ClampedArray(cleaned.data);
         lastTime = video.currentTime;
       }
       ctx.putImageData(cleaned, x, y);
+
+      if (emitFrame && manualCapture && canvasTrack && typeof canvasTrack.requestFrame === 'function') {
+        canvasTrack.requestFrame();
+      }
 
       if (typeof options.onProgress === 'function' && Number.isFinite(video.duration) && video.duration > 0) {
         options.onProgress(Math.min(0.99, Math.max(0.02, video.currentTime / video.duration)));
@@ -274,7 +303,10 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
 
     const render = () => {
       if (cancelled) return;
-      try { drawClean(); } catch (error) {
+      try {
+        drawClean(true);
+      } catch (error) {
+        renderError = error instanceof Error ? error : new Error(String(error));
         cancelled = true;
         safeStopRecorder(recorder);
         return;
@@ -285,8 +317,11 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
       }
     };
 
-    drawClean();
+    // Prepare the first frame before recording, then source frame callbacks
+    // drive subsequent frames at the video's natural cadence.
+    drawClean(false);
     recorder.start(250);
+    if (manualCapture && canvasTrack && typeof canvasTrack.requestFrame === 'function') canvasTrack.requestFrame();
 
     const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 10;
     let finishedResolve;
@@ -298,7 +333,8 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
       if (finishedOnce) return;
       finishedOnce = true;
       cancelled = true;
-      try { drawClean(); } catch (error) { finishedReject(error); return; }
+      if (renderError) { finishedReject(renderError); return; }
+      try { drawClean(true); } catch (error) { finishedReject(error); return; }
       if (typeof options.onProgress === 'function') options.onProgress(1);
       safeStopRecorder(recorder);
       finishedResolve();
@@ -315,11 +351,13 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
     video.addEventListener('ended', finish, { once: true });
     video.addEventListener('error', () => fail(new Error('Video playback failed during cleanup.')), { once: true });
     video.addEventListener('timeupdate', () => {
-      if (!finishedOnce && duration > 0 && video.currentTime >= duration - 0.08) finish();
+      if (renderError) fail(renderError);
+      else if (!finishedOnce && duration > 0 && video.currentTime >= duration - 0.05) finish();
     });
 
     watchdog = setTimeout(() => {
-      if (video.currentTime >= Math.max(0, duration - 0.35)) finish();
+      if (renderError) fail(renderError);
+      else if (video.currentTime >= Math.max(0, duration - 0.35)) finish();
       else fail(new Error('Landscape video cleanup timed out. Please retry once.'));
     }, Math.max(35000, Math.ceil(duration * 3500)));
 
@@ -341,7 +379,7 @@ export async function cleanLandscapeGeminiVideo(inputBlob, options = {}) {
     const type = recorder.mimeType || mimeType || 'video/webm';
     const output = new Blob(chunks, { type: type.split(';')[0] });
     if (!output.size) throw new Error('Landscape video cleanup produced an empty output.');
-    window.__GW_ACTIVE_VIDEO_CLEANER__ = `landscape-diamond-v1-${video.videoWidth}x${video.videoHeight}`;
+    window.__GW_ACTIVE_VIDEO_CLEANER__ = `landscape-diamond-v2-source-cadence-${video.videoWidth}x${video.videoHeight}`;
     return output;
   } finally {
     if (watchdog) clearTimeout(watchdog);
