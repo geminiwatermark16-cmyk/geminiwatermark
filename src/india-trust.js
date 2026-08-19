@@ -55,10 +55,19 @@
 })();
 
 // Keep the ₹99 Cashfree checkout reachable from both video experiences even
-// while free video trial credits remain. The free quota is not consumed or
-// blocked by this UI; users can close checkout and continue using free videos.
+// while free video trial credits remain. This version is deliberately careful
+// not to mutate watched DOM nodes repeatedly, which previously created a
+// MutationObserver feedback loop and froze all page clicks.
 (() => {
   const STYLE_ID = 'gw-video-payment-entry-style';
+
+  const setTextIfChanged = (element, text) => {
+    if (element && element.textContent !== text) element.textContent = text;
+  };
+
+  const setDisplayIfChanged = (element, value) => {
+    if (element && element.style.display !== value) element.style.display = value;
+  };
 
   const freeVideosLeft = () => {
     const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
@@ -86,12 +95,12 @@
     const copy = modal.querySelector('.modalCard > p');
     const payButton = document.getElementById('payBtn');
 
-    if (copy) {
-      copy.textContent = left > 0
-        ? `You still have ${left} free video${left === 1 ? '' : 's'} left. Continue free, or buy the ${price} video plan now for 30 days.`
-        : `Your free video allowance is used. Continue with the ${price} video plan for 30 days.`;
-    }
-    if (payButton && !payButton.disabled) payButton.textContent = `Pay ${price} with Cashfree`;
+    const modalCopy = left > 0
+      ? `You still have ${left} free video${left === 1 ? '' : 's'} left. Continue free, or buy the ${price} video plan now for 30 days.`
+      : `Your free video allowance is used. Continue with the ${price} video plan for 30 days.`;
+
+    setTextIfChanged(copy, modalCopy);
+    if (payButton && !payButton.disabled) setTextIfChanged(payButton, `Pay ${price} with Cashfree`);
 
     modal.classList.remove('hidden');
     document.body.classList.add('locked');
@@ -134,15 +143,13 @@
     const paid = isPaid();
     const price = currentPrice();
 
-    // Pricing CTA: keep it usable even before all free videos are consumed.
     const buyPlan = document.getElementById('buyPlan');
     if (buyPlan) {
-      buyPlan.style.display = paid ? 'none' : '';
-      if (!paid) buyPlan.textContent = `Buy ${price} plan now`;
+      setDisplayIfChanged(buyPlan, paid ? 'none' : '');
+      if (!paid) setTextIfChanged(buyPlan, `Buy ${price} plan now`);
       wireButton(buyPlan);
     }
 
-    // My Account CTA previously only jumped to #pricing; open checkout instead.
     const accountUpgrade = document.getElementById('accountUpgrade');
     if (accountUpgrade && accountUpgrade.dataset.gwCheckoutWired !== '1') {
       accountUpgrade.dataset.gwCheckoutWired = '1';
@@ -154,7 +161,6 @@
       });
     }
 
-    // Normal Video mode gets its own visible payment entry in the quota row.
     const quota = document.querySelector('#tool > .quota');
     let videoPay = document.getElementById('gwVideoUpgradeInline');
     if (quota && !videoPay) {
@@ -166,12 +172,11 @@
       wireButton(videoPay);
     }
     if (videoPay) {
-      videoPay.textContent = `Buy ${price} plan`;
+      setTextIfChanged(videoPay, `Buy ${price} plan`);
       const videoActive = videoTab.classList.contains('active');
-      videoPay.style.display = !paid && videoActive ? '' : 'none';
+      setDisplayIfChanged(videoPay, !paid && videoActive ? '' : 'none');
     }
 
-    // Video Enhance previously had no Cashfree entry point at all.
     const enhanceHero = document.querySelector('#upscalePanel .gwUpscaleHero');
     let enhancePay = document.getElementById('gwEnhanceUpgradeInline');
     if (enhanceHero && !enhancePay) {
@@ -183,22 +188,31 @@
       wireButton(enhancePay);
     }
     if (enhancePay) {
-      enhancePay.textContent = `Buy ${price} plan`;
+      setTextIfChanged(enhancePay, `Buy ${price} plan`);
       const enhanceActive = document.getElementById('upscaleTab')?.classList.contains('active');
-      enhancePay.style.display = !paid && enhanceActive ? '' : 'none';
+      setDisplayIfChanged(enhancePay, !paid && enhanceActive ? '' : 'none');
     }
 
     return true;
   };
 
-  const refreshSoon = () => setTimeout(ensureEntryPoints, 0);
+  let refreshQueued = false;
+  const refreshSoon = () => {
+    if (refreshQueued) return;
+    refreshQueued = true;
+    requestAnimationFrame(() => {
+      refreshQueued = false;
+      ensureEntryPoints();
+    });
+  };
+
   document.addEventListener('click', (event) => {
     if (event.target.closest('#videoTab, #imageTab, #upscaleTab, #backgroundTab, #accountBtn, #footerAccountBtn, #closeModal')) {
       refreshSoon();
     }
   }, true);
 
-  const observer = new MutationObserver(() => ensureEntryPoints());
-  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  const observer = new MutationObserver(refreshSoon);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
   ensureEntryPoints();
 })();
