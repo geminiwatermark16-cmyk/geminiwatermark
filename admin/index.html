@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Operations Console</title>
+<link rel="stylesheet" href="/src/admin-console.css?v=20260820-1">
+</head>
+<body>
+<header class="wrap"><div class="brand">✦ Operations Console</div><div class="muted">geminiwatermark16@gmail.com</div></header>
+<main class="wrap">
+<section id="gate" class="gate"><h1>Admin access</h1><p class="muted">Enter the private operations key.</p><input id="key" type="password" autocomplete="current-password" placeholder="Admin key"><button id="login">Open dashboard</button><div id="error"></div></section>
+<section id="dashboard" class="hidden">
+<div class="topline"><div><span class="muted">GEMINIWATERMARK.SPACE</span><h1>Business overview</h1></div><button id="refresh">Refresh</button></div>
+<div id="warning" class="notice hidden"></div>
+<div class="cards"><div class="card"><span>Paid clients</span><b id="clients">—</b></div><div class="card"><span>Paid orders</span><b id="orders">—</b></div><div class="card"><span>Active plans</span><b id="active">—</b></div><div class="card"><span>Expired plans</span><b id="expired">—</b></div><div class="card"><span>Revenue (30d)</span><b id="revenue">—</b></div></div>
+
+<div class="panel"><div class="panelHead"><div><h2>Real traffic</h2><p id="trafficStatus" class="muted">Loading first-party visitor data…</p></div></div><div class="cards four"><div class="card"><span>Visitors 24h</span><b id="uv24">—</b></div><div class="card"><span>Pageviews 24h</span><b id="pv24">—</b></div><div class="card"><span>Visitors 7d</span><b id="uv7">—</b></div><div class="card"><span>Visitors 30d</span><b id="uv30">—</b></div></div><div id="trafficPages" class="trafficPages"></div></div>
+
+<div class="panel"><div class="panelHead"><div><h2>Live chat inbox</h2><p id="chatStorageNote" class="muted">Customer messages appear here automatically.</p></div><span class="badge" id="pendingCount">0</span></div><div class="chatGrid"><div id="chatList" class="chatList"><div class="chatItem"><p>Loading chats…</p></div></div><div id="chatDetail" class="chatDetail hidden"><div class="panelHead"><strong id="chatTitle">Conversation</strong><button id="closeChat" type="button">Close</button></div><div id="messages" class="messages"></div><div class="replyRow"><textarea id="replyText" placeholder="Reply to customer..."></textarea><button id="replyBtn" type="button">Reply</button></div></div></div></div>
+
+<div class="panel"><h2>Packages & customers</h2><div class="tableWrap"><table><thead><tr><th>Status</th><th>Plan</th><th>Customer</th><th>Mobile</th><th>Email</th><th>Paid</th><th>Expires</th><th>Order ID</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+</section>
+</main>
+<script defer src="/src/admin-console.js?v=20260820-1"></script>
+</body></html>
