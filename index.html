@@ -4,7 +4,7 @@
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  j=d.createElement(e='script'),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-PC56P86K');</script>
   <!-- End Google Tag Manager -->
@@ -38,6 +38,10 @@
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
   <link rel="preconnect" href="https://sdk.cashfree.com" crossorigin />
   <link rel="modulepreload" href="/src/app-bootstrap-v11.js?v=20260819-1" />
+  <link rel="modulepreload" href="/src/runtime-loader.js?v=20260818-13" />
+  <link rel="modulepreload" href="/src/video-deep-clean.js?v=20260818-10" />
+  <link rel="modulepreload" href="/src/video-clean-adaptive-v1.js?v=20260818-1" />
+  <link rel="modulepreload" href="/src/video-clean-landscape-v1.js?v=20260819-1" />
 
   <meta property="og:title" content="Gemini Watermark Remover Online – Images & Videos" />
   <meta property="og:description" content="Browser-based visible Gemini and Veo watermark cleanup. Images free, first 21 successful video cleanups free, then ₹99 for 30 days." />
@@ -62,6 +66,17 @@
   <link rel="stylesheet" href="/src/styles.css" />
   <link rel="stylesheet" href="/src/fixes.css" />
   <link rel="stylesheet" href="/src/live-chat.css?v=20260818-1" />
+  <script>document.documentElement.classList.add('gw-booting');</script>
+  <style>
+    html.gw-booting,html.gw-booting body{overflow:hidden}
+    #gw-boot-screen{position:fixed;inset:0;z-index:2147483000;background:#f5f5f2;display:grid;place-items:center;transition:opacity .18s ease}
+    #gw-boot-screen .gwBootCard{display:flex;flex-direction:column;align-items:center;gap:13px;color:#111;font-family:Arial,sans-serif;text-align:center}
+    #gw-boot-screen .gwBootLogo{font-size:16px;font-weight:800;letter-spacing:-.02em}
+    #gw-boot-screen .gwBootSpinner{width:28px;height:28px;border:3px solid rgba(17,17,17,.13);border-top-color:#111;border-radius:50%;animation:gwBootSpin .7s linear infinite}
+    #gw-boot-screen small{font-size:12px;opacity:.5}
+    html.gw-ready #gw-boot-screen{opacity:0;pointer-events:none}
+    @keyframes gwBootSpin{to{transform:rotate(360deg)}}
+  </style>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -118,6 +133,10 @@
   alt="" /></noscript>
   <!-- End Meta Pixel Code (noscript) -->
 
+  <div id="gw-boot-screen" aria-live="polite" aria-label="Loading Gemini watermark remover">
+    <div class="gwBootCard"><div class="gwBootLogo">✦ geminiwatermark.space</div><div class="gwBootSpinner"></div><small>Loading remover…</small></div>
+  </div>
+
   <div id="app">
     <header class="nav wrap">
       <a class="brand" href="#top"><span>✦</span> geminiwatermark.space</a>
@@ -169,11 +188,15 @@
   <script defer src="/src/seo-links.js?v=20260818-2"></script>
   <script type="module" src="/src/app-bootstrap-v11.js?v=20260819-1"></script>
   <script defer fetchpriority="low" src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
-  <script type="module" src="/src/background-remover-v1.js?v=20260818-1"></script>
-  <script type="module" src="/src/video-upscale-v1.js?v=20260818-2"></script>
-  <script type="module" src="/src/video-upscale-mp4-v2.js?v=20260818-2"></script>
-  <script type="module" src="/src/video-enhance-gpu-v2.js?v=20260818-1"></script>
-  <script type="module" src="/src/trust-enhancements.js?v=20260818-2"></script>
-  <script type="module" src="/src/india-trust.js?v=20260819-2"></script>
+  <script type="module" src="/src/after-core.js?v=20260819-1"></script>
+  <script>
+    setTimeout(() => {
+      if (document.documentElement.classList.contains('gw-booting')) {
+        document.documentElement.classList.remove('gw-booting');
+        document.documentElement.classList.add('gw-ready');
+        setTimeout(() => document.getElementById('gw-boot-screen')?.remove(), 220);
+      }
+    }, 10000);
+  </script>
 </body>
 </html>
