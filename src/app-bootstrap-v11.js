@@ -1,22 +1,16 @@
-// 21-free-video policy restore.
-// A previous bootstrap forced the browser trial counter to 21 on every load,
-// which made the ₹99 plan appear before the first video. Restore a fresh
-// 21-video allowance once per browser, then let main-fixed.js enforce payment
-// only from video 22 onward.
+// Paid-video policy: image cleanup stays free, but all video processing requires
+// an active paid plan before the first upload. Mark the browser trial as fully
+// consumed before the core runtime evaluates its entitlement gate.
 const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
 const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
-const TRIAL_RESTORE_KEY = 'gw_video_trial_21_restored_20260818_v1';
 
 try {
-  if (localStorage.getItem(TRIAL_RESTORE_KEY) !== '1') {
-    localStorage.setItem(TRIAL_COUNT_KEY, '0');
-    localStorage.removeItem(LEGACY_TRIAL_KEY);
-    localStorage.setItem(TRIAL_RESTORE_KEY, '1');
-  }
+  localStorage.setItem(TRIAL_COUNT_KEY, '21');
+  localStorage.setItem(LEGACY_TRIAL_KEY, '1');
 } catch {}
 
-// Load the existing app/account/payment runtime first. Its native policy is:
-// first 21 successfully processed videos free, video 22+ requires a plan.
+// Load the existing app/account/payment runtime first. With the browser trial
+// locked above, its native entitlement gate requires payment for every video.
 await import('./runtime-loader.js?v=20260818-13');
 
 // Keep the current pure-browser story cleaner.
@@ -47,9 +41,8 @@ if (typeof window.__GW_PURE_CLEAN_STORY_VIDEO__ === 'function') {
   window.__GW_ACTIVE_VIDEO_CLEANER__ = 'pure-js-v14-texture-smooth-watchdog';
 }
 
-// Ad traffic lands here primarily for video. Put Video first, make it the
-// default selected tool, and give it a clear visual priority without changing
-// image availability.
+// Ad traffic lands here primarily for video. Put Video first and make it the
+// default selected tool. The paid gate remains enforced by the core runtime.
 function promoteVideoForAdTraffic() {
   const tabs = document.querySelector('.tabs');
   const videoTab = document.getElementById('videoTab');
@@ -59,8 +52,8 @@ function promoteVideoForAdTraffic() {
   if (tabs.firstElementChild !== videoTab) tabs.insertBefore(videoTab, imageTab);
   videoTab.classList.add('gw-video-priority');
 
-  // Use the app's own click handler so all mode state, upload accepts, quota
-  // copy and payment gating stay in sync.
+  // Use the app's own click handler so all mode state and payment gating stay
+  // in sync.
   if (!videoTab.classList.contains('active')) videoTab.click();
 }
 
@@ -120,9 +113,7 @@ function currentVideoAccess() {
   const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
   const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
   const paid = badge === 'Unlocked' || quota === 'Active';
-  const match = badge.match(/^(\d+)\s+Free$/i);
-  const freeLeft = match ? Math.max(0, Number(match[1]) || 0) : 0;
-  return { paid, freeLeft, trialAvailable: !paid && freeLeft > 0 };
+  return { paid };
 }
 
 function patchCheckoutIdentityUi() {
@@ -152,43 +143,41 @@ function patchCheckoutIdentityUi() {
   }
 }
 
-function patchTrialAndRegionalCopy() {
+function patchPaidAndRegionalCopy() {
   const price = planPrice.displayPrice;
-  const { paid, freeLeft, trialAvailable } = currentVideoAccess();
+  const { paid } = currentVideoAccess();
 
-  setHtml(document.querySelector('.hero .badge'), `<i></i> Images free · 21 videos free · then ${price}`);
+  setHtml(document.querySelector('.hero .badge'), `<i></i> Images free · Video ${price} / 30 days`);
   setText(
     document.querySelector('.hero .lead'),
-    `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Your first 21 successfully processed videos are free, then video processing unlocks with the ${price} plan for 30 days.`
+    `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Image cleanup is free. Video processing is a paid feature and requires the ${price} plan, active for 30 days after successful payment.`
   );
 
-  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>21</b><span>Videos free</span>');
+  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>PAID</b><span>Video processing</span>');
   setHtml(document.querySelector('.metrics article:nth-child(4)'), `<b>${price}</b><span>30-day video plan</span>`);
 
-  setText(document.querySelector('#pricing h2'), 'Images free. 21 videos free.');
+  setText(document.querySelector('#pricing h2'), `Images free. Video ${price} for 30 days.`);
   setText(
     document.querySelector('#pricing .sectionLead'),
-    `Process your first 21 videos free on this browser. Video 22 onward requires the ${price} plan, valid for 30 days from successful payment.`
+    `Supported image cleanup stays free. Video upload and processing require the ${price} plan, valid for 30 days from successful payment with no automatic renewal.`
   );
 
   const featured = document.querySelector('#pricing article.featured');
   if (featured) {
-    setText(featured.querySelector(':scope > span'), 'VIDEO');
+    setText(featured.querySelector(':scope > span'), 'VIDEO PLAN');
     const priceValue = featured.querySelector('.price b');
     if (priceValue) setText(priceValue, price);
     const priceEm = featured.querySelector('.price em');
     if (priceEm) setText(priceEm, 'for 30 days');
 
     const items = featured.querySelectorAll('li');
-    if (items[0]) setText(items[0], 'First 21 videos free');
-    if (items[1]) setText(items[1], '1080×1920 story/reel support');
+    if (items[0]) setText(items[0], 'Paid video processing from the first video');
+    if (items[1]) setText(items[1], '720p + 1080p portrait and landscape support');
     if (items[2]) setText(items[2], 'New Gemini diamond + old Veo mode');
 
     const buyBtn = document.getElementById('buyPlan');
     if (buyBtn) {
-      // No ₹99 checkout link/CTA while free videos remain. It appears only
-      // after all 21 free successful video processes have been consumed.
-      buyBtn.style.display = (!paid && !trialAvailable) ? '' : 'none';
+      buyBtn.style.display = paid ? 'none' : '';
       setText(buyBtn, `Unlock video for ${price}`);
     }
   }
@@ -197,7 +186,7 @@ function patchTrialAndRegionalCopy() {
   const modalCard = modal?.querySelector('.modalCard');
   if (modalCard) {
     setText(modalCard.querySelector('h2'), 'Unlock video');
-    setText(modalCard.querySelector(':scope > p'), `Your 21 free videos are used. Continue with the ${price} video plan for 30 days.`);
+    setText(modalCard.querySelector(':scope > p'), `Video processing is paid. Continue with the ${price} video plan for 30 days.`);
     const payPriceValue = modalCard.querySelector('.payPrice b');
     if (payPriceValue) setText(payPriceValue, price);
     const priceText = modalCard.querySelector('.payPrice span');
@@ -209,14 +198,18 @@ function patchTrialAndRegionalCopy() {
   const accountUpgrade = document.getElementById('accountUpgrade');
   if (accountUpgrade) setText(accountUpgrade, `Buy / renew ${price} plan`);
 
+  const videoBadge = document.getElementById('videoBadge');
+  if (videoBadge && !paid) setText(videoBadge, price);
+
   const videoMode = document.getElementById('videoTab')?.classList.contains('active');
-  if (videoMode && trialAvailable) {
-    setText(document.getElementById('dropMeta'), `${freeLeft} free video${freeLeft === 1 ? '' : 's'} remaining · then ${price}`);
-  } else if (videoMode && !paid && !trialAvailable) {
-    setText(document.getElementById('toolTitle'), 'Unlock more video processing');
-    setText(document.getElementById('toolSub'), 'Your 21 free videos have been used');
-    setText(document.getElementById('dropStrong'), `${price} plan required`);
-    setText(document.getElementById('dropMeta'), '21 free videos used · upgrade to continue');
+  if (videoMode && !paid) {
+    setText(document.getElementById('quotaTitle'), `Video plan · ${price}`);
+    setText(document.getElementById('quotaText'), 'Paid video processing · 30-day access');
+    setText(document.getElementById('quotaPrice'), price);
+    setText(document.getElementById('toolTitle'), 'Unlock video processing');
+    setText(document.getElementById('toolSub'), `${price} gives supported video processing for 30 days`);
+    setText(document.getElementById('dropStrong'), `Pay ${price} to process video`);
+    setText(document.getElementById('dropMeta'), 'Video is a paid feature · payment required before upload');
   }
 
   patchCheckoutIdentityUi();
@@ -273,7 +266,7 @@ function installRegionalCheckout() {
       }
 
       localStorage.setItem(TOKEN_KEY, verification.entitlementToken);
-      if (msg) msg.textContent = 'Payment verified. ₹99 video plan is ACTIVE for 30 days.';
+      if (msg) msg.textContent = `Payment verified. ${planPrice.displayPrice} video plan is ACTIVE for 30 days.`;
 
       // Keep the user on the video flow after successful payment. Reloading lets
       // the core runtime validate the signed entitlement token and set its own
@@ -297,12 +290,12 @@ async function loadRegionalPlanPrice() {
   } catch {
     planPrice = { ...DEFAULT_PLAN_PRICE };
   }
-  patchTrialAndRegionalCopy();
+  patchPaidAndRegionalCopy();
   installRegionalCheckout();
   promoteVideoForAdTraffic();
 }
 
-patchTrialAndRegionalCopy();
+patchPaidAndRegionalCopy();
 installRegionalCheckout();
 promoteVideoForAdTraffic();
 loadRegionalPlanPrice();
@@ -310,14 +303,14 @@ loadRegionalPlanPrice();
 const videoBadge = document.getElementById('videoBadge');
 if (videoBadge) {
   new MutationObserver(() => {
-    patchTrialAndRegionalCopy();
+    patchPaidAndRegionalCopy();
     installRegionalCheckout();
   }).observe(videoBadge, { childList: true, subtree: true, characterData: true });
 }
 
 for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'closeModal', 'accountBtn', 'footerAccountBtn']) {
   document.getElementById(id)?.addEventListener('click', () => setTimeout(() => {
-    patchTrialAndRegionalCopy();
+    patchPaidAndRegionalCopy();
     installRegionalCheckout();
   }, 0));
 }
