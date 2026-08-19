@@ -37,7 +37,8 @@
   <link rel="alternate" hreflang="x-default" href="https://geminiwatermark.space/" />
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
   <link rel="preconnect" href="https://sdk.cashfree.com" crossorigin />
-  <link rel="modulepreload" href="/src/app-bootstrap-v11.js?v=20260819-1" />
+  <link rel="modulepreload" href="/src/app-bootstrap-v12.js?v=20260820-1" />
+  <link rel="modulepreload" href="/src/runtime-funnel-patch-v1.js?v=20260820-1" />
   <link rel="modulepreload" href="/src/runtime-loader.js?v=20260818-13" />
   <link rel="modulepreload" href="/src/video-deep-clean.js?v=20260818-10" />
   <link rel="modulepreload" href="/src/video-clean-adaptive-v1.js?v=20260818-1" />
@@ -98,7 +99,7 @@
         "browserRequirements":"Requires a modern JavaScript-enabled browser",
         "description":"Browser-based utility for removing supported visible Gemini and Veo watermarks from images and videos.",
         "isAccessibleForFree":true,
-        "featureList":["Free supported image cleanup","Paid video processing from the first video","Gemini diamond and legacy Veo video profiles","Browser-side media processing"],
+        "featureList":["Free supported image cleanup","Select video before checkout","Paid video processing from the first video","Gemini diamond and legacy Veo video profiles","Browser-side media processing"],
         "offers":[
           {"@type":"Offer","name":"Image cleanup","price":"0","priceCurrency":"INR"},
           {"@type":"Offer","name":"30-day supported video plan","price":"99","priceCurrency":"INR"}
@@ -110,7 +111,7 @@
         "@id":"https://geminiwatermark.space/#faq-schema",
         "mainEntity":[
           {"@type":"Question","name":"Can I remove a visible Gemini watermark from an image for free?","acceptedAnswer":{"@type":"Answer","text":"Supported image cleanup is free in the browser-based tool."}},
-          {"@type":"Question","name":"Is Gemini video watermark removal free?","acceptedAnswer":{"@type":"Answer","text":"No. Supported video processing is a paid feature and requires an active 30-day video plan before upload."}},
+          {"@type":"Question","name":"Is Gemini video watermark removal free?","acceptedAnswer":{"@type":"Answer","text":"No. You can select your video first, but supported video processing requires an active 30-day plan before processing begins."}},
           {"@type":"Question","name":"Does this remove SynthID?","acceptedAnswer":{"@type":"Answer","text":"No. The tool targets supported visible watermarks only and does not remove invisible SynthID or other provenance signals."}},
           {"@type":"Question","name":"Does my media get uploaded?","acceptedAnswer":{"@type":"Answer","text":"The supported media-processing workflow runs in the browser. Payment data is handled separately by the payment provider when a paid plan is purchased."}}
         ]
@@ -147,24 +148,24 @@
       <section class="hero wrap">
         <div class="badge"><i></i> Images free · Video ₹99 / 30 days</div>
         <h1>Gemini watermark.<br><span>Gone in seconds.</span></h1>
-        <p class="lead">Remove supported visible Gemini watermarks from images and Veo videos in your browser. Image cleanup is free. Video processing is a paid feature and requires the ₹99 plan in India, active for 30 days after successful payment.</p>
+        <p class="lead">Remove supported visible Gemini watermarks from images and Veo videos in your browser. Image cleanup is free. For video, select your file first and complete the ₹99 30-day plan only before processing.</p>
         <section id="tool" class="tool">
-          <div class="toolHead"><div><small>VISIBLE WATERMARK REMOVER</small><h2>Gemini image and video watermark remover</h2><p>Use the interactive uploader after the page loads to process supported PNG, JPG, WebP, MP4, WebM and MOV files.</p></div><span class="local">● Local browser processing</span></div>
+          <div class="toolHead"><div><small>VISIBLE WATERMARK REMOVER</small><h2>Gemini image and video watermark remover</h2><p>Use the interactive uploader after the page loads to select supported PNG, JPG, WebP, MP4, WebM and MOV files.</p></div><span class="local">● Local browser processing</span></div>
         </section>
         <p class="privacy">● Supported media processing stays on your device. Cashfree handles checkout data when you upgrade.</p>
       </section>
 
       <section id="how" class="section dark"><div class="wrap"><small>HOW IT WORKS</small><h2>Upload. Clean. Download.</h2><div class="steps"><article><b>01</b><h3>Upload</h3><p>Select a supported Gemini image or Gemini/Veo video from your device.</p></article><article><b>02</b><h3>Process</h3><p>The browser workflow targets the supported visible watermark profile.</p></article><article><b>03</b><h3>Download</h3><p>Preview the result and save the cleaned media to your device.</p></article></div></div></section>
 
-      <section id="pricing" class="section wrap"><small>PRICING</small><h2>Images free. Video ₹99 for 30 days.</h2><p class="sectionLead">Supported image cleanup stays free. Video upload and processing require the ₹99 plan in India, valid for 30 days from successful payment with no automatic renewal.</p></section>
+      <section id="pricing" class="section wrap"><small>PRICING</small><h2>Images free. Video ₹99 for 30 days.</h2><p class="sectionLead">Supported image cleanup stays free. For video, you can select your file first; processing and download require the ₹99 plan in India, valid for 30 days from successful payment with no automatic renewal.</p></section>
 
       <section class="section wrap"><small>GUIDES</small><h2>Gemini watermark removal guides</h2><p class="sectionLead">Read the <a href="/remove-gemini-watermark">Gemini watermark remover guide</a>, <a href="/gemini-image-watermark-remover">free Gemini image watermark remover guide</a>, <a href="/gemini-video-watermark-remover">Gemini video watermark remover guide</a>, <a href="/google-flow-watermark-remover">Google Flow watermark remover guide</a>, or the <a href="/veo-watermark-remover">Veo watermark remover guide</a>.</p></section>
-      <section id="faq" class="section faq wrap"><small>FAQ</small><h2>Gemini watermark remover FAQ.</h2><details open><summary>Can I remove a Gemini watermark from an image for free?</summary><p>Supported image cleanup is free in the current browser-based tool.</p></details><details><summary>Is video watermark removal free?</summary><p>No. Supported video processing is paid from the first video and requires an active 30-day video plan before upload.</p></details><details><summary>Does this remove SynthID?</summary><p>No. This tool handles supported visible watermarks only and does not remove invisible SynthID or other provenance signals.</p></details><details><summary>Does the tool upload my media?</summary><p>The supported media-processing workflow runs in the browser. Payment data is handled separately by the payment provider when a paid plan is purchased.</p></details></section>
+      <section id="faq" class="section faq wrap"><small>FAQ</small><h2>Gemini watermark remover FAQ.</h2><details open><summary>Can I remove a Gemini watermark from an image for free?</summary><p>Supported image cleanup is free in the current browser-based tool.</p></details><details><summary>Is video watermark removal free?</summary><p>No. You can select your video first, but supported video processing is paid from the first video and requires an active 30-day plan before processing.</p></details><details><summary>Does this remove SynthID?</summary><p>No. This tool handles supported visible watermarks only and does not remove invisible SynthID or other provenance signals.</p></details><details><summary>Does the tool upload my media?</summary><p>The supported media-processing workflow runs in the browser. Payment data is handled separately by the payment provider when a paid plan is purchased.</p></details></section>
     </main>
     <footer><div class="wrap"><b>✦ geminiwatermark.space</b><span>Independent utility · © 2026</span></div></footer>
   </div>
 
-  <noscript><main style="max-width:760px;margin:60px auto;padding:20px;font-family:Arial,sans-serif"><h1>Gemini Watermark Remover Online</h1><p>Remove supported visible Gemini and Veo watermarks from images and videos. Enable JavaScript to use the browser-based processing tool.</p><p>Image cleanup is free. Video processing is a paid feature and requires the 30-day plan before upload; in India the current plan price is ₹99, with no automatic renewal.</p><p><a href="/remove-gemini-watermark">Gemini watermark removal guide</a> · <a href="/gemini-image-watermark-remover">Gemini image watermark remover</a> · <a href="/gemini-video-watermark-remover">Gemini video watermark remover</a> · <a href="/veo-watermark-remover">Veo watermark remover</a> · <a href="/blog">Creator guides</a></p></main></noscript>
+  <noscript><main style="max-width:760px;margin:60px auto;padding:20px;font-family:Arial,sans-serif"><h1>Gemini Watermark Remover Online</h1><p>Remove supported visible Gemini and Veo watermarks from images and videos. Enable JavaScript to use the browser-based processing tool.</p><p>Image cleanup is free. You can select a video before checkout, but processing requires the 30-day plan; in India the current plan price is ₹99, with no automatic renewal.</p><p><a href="/remove-gemini-watermark">Gemini watermark removal guide</a> · <a href="/gemini-image-watermark-remover">Gemini image watermark remover</a> · <a href="/gemini-video-watermark-remover">Gemini video watermark remover</a> · <a href="/veo-watermark-remover">Veo watermark remover</a> · <a href="/blog">Creator guides</a></p></main></noscript>
 
   <button id="gw-chat-launcher" type="button" aria-controls="gw-chat-panel" aria-expanded="false"><span class="dot"></span>Live Chat</button>
   <section id="gw-chat-panel" aria-label="Live support chat">
@@ -186,7 +187,7 @@
 
   <script defer src="/src/live-chat.js?v=20260818-1"></script>
   <script defer src="/src/seo-links.js?v=20260818-2"></script>
-  <script type="module" src="/src/app-bootstrap-v11.js?v=20260819-1"></script>
+  <script type="module" src="/src/app-bootstrap-v12.js?v=20260820-1"></script>
   <script defer fetchpriority="low" src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
   <script type="module" src="/src/after-core.js?v=20260819-1"></script>
   <script>

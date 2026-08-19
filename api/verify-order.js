@@ -60,6 +60,8 @@ module.exports = async function handler(req, res) {
       paid: true,
       status: 'PAID',
       orderId: order.order_id,
+      amount: Number(order.order_amount),
+      currency: String(order.order_currency || '').toUpperCase(),
       entitlementToken,
       account: {
         plan: planLabelFromPayment(order.order_amount, order.order_currency),
