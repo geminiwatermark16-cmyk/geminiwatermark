@@ -89,6 +89,7 @@ document.head.appendChild(videoPriorityStyle);
 promoteVideoForAdTraffic();
 
 const TOKEN_KEY = 'gw_video_plan_token_v1';
+const UNLIMITED_ACCESS_EMAIL = 'hyydikshant@gmail.com';
 const DEFAULT_PLAN_PRICE = {
   country: 'IN',
   region: 'india',
@@ -230,11 +231,43 @@ function installRegionalCheckout() {
   const payBtn = document.getElementById('payBtn');
   if (!payBtn) return;
 
+  const emailInput = document.getElementById('email');
+  if (emailInput) {
+    emailInput.oninput = () => {
+      if (payBtn.disabled) return;
+      const normalized = String(emailInput.value || '').trim().toLowerCase();
+      payBtn.textContent = normalized === UNLIMITED_ACCESS_EMAIL
+        ? 'Activate unlimited access'
+        : `Pay ${planPrice.displayPrice} with Cashfree`;
+    };
+  }
+
   payBtn.onclick = async () => {
     const phone = String(document.getElementById('phone')?.value || '').replace(/\D/g, '').slice(-15);
     const email = String(document.getElementById('email')?.value || '').trim();
+    const normalizedEmail = email.toLowerCase();
     const msg = document.getElementById('checkoutMsg');
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const unlimitedAccess = normalizedEmail === UNLIMITED_ACCESS_EMAIL;
+
+    if (unlimitedAccess) {
+      payBtn.disabled = true;
+      payBtn.textContent = 'Activating unlimited access…';
+      if (msg) msg.textContent = '';
+
+      try {
+        const access = await postJson('/api/unlimited-access', { email: normalizedEmail });
+        if (!access.entitlementToken) throw new Error('Unlimited access token was not returned.');
+        localStorage.setItem(TOKEN_KEY, access.entitlementToken);
+        if (msg) msg.textContent = 'Unlimited video access activated for this email.';
+        location.reload();
+      } catch (error) {
+        if (msg) msg.textContent = error?.message || 'Unlimited access could not be activated.';
+        payBtn.disabled = false;
+        payBtn.textContent = 'Activate unlimited access';
+      }
+      return;
+    }
 
     if (planPrice.region === 'india' && !/^[6-9]\d{9}$/.test(phone)) {
       if (msg) msg.textContent = 'Enter a valid 10-digit Indian mobile number.';
