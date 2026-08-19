@@ -69,13 +69,13 @@
   <link rel="stylesheet" href="/src/live-chat.css?v=20260818-1" />
   <script>document.documentElement.classList.add('gw-booting');</script>
   <style>
-    html.gw-booting,html.gw-booting body{overflow:hidden}
-    #gw-boot-screen{position:fixed;inset:0;z-index:2147483000;background:#f5f5f2;display:grid;place-items:center;transition:opacity .18s ease}
+    #gw-boot-screen{position:fixed;inset:0;z-index:2147483000;background:#f5f5f2;display:grid;place-items:center;transition:opacity .18s ease,visibility .18s ease}
     #gw-boot-screen .gwBootCard{display:flex;flex-direction:column;align-items:center;gap:13px;color:#111;font-family:Arial,sans-serif;text-align:center}
     #gw-boot-screen .gwBootLogo{font-size:16px;font-weight:800;letter-spacing:-.02em}
     #gw-boot-screen .gwBootSpinner{width:28px;height:28px;border:3px solid rgba(17,17,17,.13);border-top-color:#111;border-radius:50%;animation:gwBootSpin .7s linear infinite}
     #gw-boot-screen small{font-size:12px;opacity:.5}
-    html.gw-ready #gw-boot-screen{opacity:0;pointer-events:none}
+    html.gw-ready #gw-boot-screen{opacity:0;visibility:hidden;pointer-events:none}
+    #how,#pricing,#faq,footer{content-visibility:auto;contain-intrinsic-size:700px}
     @keyframes gwBootSpin{to{transform:rotate(360deg)}}
   </style>
   <script type="application/ld+json">
@@ -188,7 +188,33 @@
   <script defer src="/src/live-chat.js?v=20260818-1"></script>
   <script defer src="/src/seo-links.js?v=20260818-2"></script>
   <script type="module" src="/src/app-bootstrap-v12.js?v=20260820-1"></script>
-  <script defer fetchpriority="low" src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <script>
+    (() => {
+      let cashfreePromise;
+      window.__gwLoadCashfree = () => {
+        if (typeof window.Cashfree === 'function') return Promise.resolve();
+        if (cashfreePromise) return cashfreePromise;
+        cashfreePromise = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+          script.async = true;
+          script.fetchPriority = 'low';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Cashfree SDK failed to load.'));
+          document.head.appendChild(script);
+        });
+        return cashfreePromise;
+      };
+      document.addEventListener('pointerdown', (event) => {
+        if (event.target.closest?.('#buyPlan,#payBtn')) window.__gwLoadCashfree().catch(() => {});
+      }, { capture: true, passive: true });
+      window.addEventListener('load', () => {
+        const load = () => window.__gwLoadCashfree().catch(() => {});
+        if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 1800 });
+        else setTimeout(load, 700);
+      }, { once: true });
+    })();
+  </script>
   <script type="module" src="/src/after-core.js?v=20260819-1"></script>
   <script>
     setTimeout(() => {
@@ -197,7 +223,7 @@
         document.documentElement.classList.add('gw-ready');
         setTimeout(() => document.getElementById('gw-boot-screen')?.remove(), 220);
       }
-    }, 10000);
+    }, 900);
   </script>
 </body>
 </html>
