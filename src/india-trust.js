@@ -53,3 +53,152 @@
     observer.observe(target, { childList: true, subtree: true });
   }
 })();
+
+// Keep the ₹99 Cashfree checkout reachable from both video experiences even
+// while free video trial credits remain. The free quota is not consumed or
+// blocked by this UI; users can close checkout and continue using free videos.
+(() => {
+  const STYLE_ID = 'gw-video-payment-entry-style';
+
+  const freeVideosLeft = () => {
+    const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
+    const match = badge.match(/^(\d+)\s+Free$/i);
+    return match ? Math.max(0, Number(match[1]) || 0) : 0;
+  };
+
+  const isPaid = () => {
+    const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
+    const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
+    return badge === 'Unlocked' || quota === 'Active';
+  };
+
+  const currentPrice = () =>
+    document.querySelector('#payModal .payPrice b')?.textContent?.trim() ||
+    document.querySelector('#pricing article.featured .price b')?.textContent?.trim() ||
+    '₹99';
+
+  const openCheckout = () => {
+    const modal = document.getElementById('payModal');
+    if (!modal) return;
+
+    const price = currentPrice();
+    const left = freeVideosLeft();
+    const copy = modal.querySelector('.modalCard > p');
+    const payButton = document.getElementById('payBtn');
+
+    if (copy) {
+      copy.textContent = left > 0
+        ? `You still have ${left} free video${left === 1 ? '' : 's'} left. Continue free, or buy the ${price} video plan now for 30 days.`
+        : `Your free video allowance is used. Continue with the ${price} video plan for 30 days.`;
+    }
+    if (payButton && !payButton.disabled) payButton.textContent = `Pay ${price} with Cashfree`;
+
+    modal.classList.remove('hidden');
+    document.body.classList.add('locked');
+    setTimeout(() => {
+      const preferred = document.getElementById('phone') || document.getElementById('email');
+      preferred?.focus?.();
+    }, 50);
+  };
+
+  const ensureStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .gwVideoPayEntry{border:0;border-radius:999px;padding:9px 13px;background:#111;color:#fff;font:inherit;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+      .gwVideoPayEntry:hover{transform:translateY(-1px)}
+      .quota .gwVideoPayEntry{margin-left:auto}
+      .gwUpscaleHero .gwVideoPayEntry{margin-left:auto;align-self:flex-start}
+      @media(max-width:700px){.quota .gwVideoPayEntry{width:100%;margin:8px 0 0}.gwUpscaleHero .gwVideoPayEntry{width:100%;margin:12px 0 0}}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const wireButton = (button) => {
+    if (!button || button.dataset.gwCheckoutWired === '1') return;
+    button.dataset.gwCheckoutWired = '1';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openCheckout();
+    });
+  };
+
+  const ensureEntryPoints = () => {
+    const modal = document.getElementById('payModal');
+    const videoTab = document.getElementById('videoTab');
+    if (!modal || !videoTab) return false;
+
+    ensureStyle();
+    const paid = isPaid();
+    const price = currentPrice();
+
+    // Pricing CTA: keep it usable even before all free videos are consumed.
+    const buyPlan = document.getElementById('buyPlan');
+    if (buyPlan) {
+      buyPlan.style.display = paid ? 'none' : '';
+      if (!paid) buyPlan.textContent = `Buy ${price} plan now`;
+      wireButton(buyPlan);
+    }
+
+    // My Account CTA previously only jumped to #pricing; open checkout instead.
+    const accountUpgrade = document.getElementById('accountUpgrade');
+    if (accountUpgrade && accountUpgrade.dataset.gwCheckoutWired !== '1') {
+      accountUpgrade.dataset.gwCheckoutWired = '1';
+      accountUpgrade.addEventListener('click', (event) => {
+        event.preventDefault();
+        document.getElementById('accountModal')?.classList.add('hidden');
+        document.body.classList.remove('locked');
+        openCheckout();
+      });
+    }
+
+    // Normal Video mode gets its own visible payment entry in the quota row.
+    const quota = document.querySelector('#tool > .quota');
+    let videoPay = document.getElementById('gwVideoUpgradeInline');
+    if (quota && !videoPay) {
+      videoPay = document.createElement('button');
+      videoPay.id = 'gwVideoUpgradeInline';
+      videoPay.type = 'button';
+      videoPay.className = 'gwVideoPayEntry';
+      quota.appendChild(videoPay);
+      wireButton(videoPay);
+    }
+    if (videoPay) {
+      videoPay.textContent = `Buy ${price} plan`;
+      const videoActive = videoTab.classList.contains('active');
+      videoPay.style.display = !paid && videoActive ? '' : 'none';
+    }
+
+    // Video Enhance previously had no Cashfree entry point at all.
+    const enhanceHero = document.querySelector('#upscalePanel .gwUpscaleHero');
+    let enhancePay = document.getElementById('gwEnhanceUpgradeInline');
+    if (enhanceHero && !enhancePay) {
+      enhancePay = document.createElement('button');
+      enhancePay.id = 'gwEnhanceUpgradeInline';
+      enhancePay.type = 'button';
+      enhancePay.className = 'gwVideoPayEntry';
+      enhanceHero.appendChild(enhancePay);
+      wireButton(enhancePay);
+    }
+    if (enhancePay) {
+      enhancePay.textContent = `Buy ${price} plan`;
+      const enhanceActive = document.getElementById('upscaleTab')?.classList.contains('active');
+      enhancePay.style.display = !paid && enhanceActive ? '' : 'none';
+    }
+
+    return true;
+  };
+
+  const refreshSoon = () => setTimeout(ensureEntryPoints, 0);
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('#videoTab, #imageTab, #upscaleTab, #backgroundTab, #accountBtn, #footerAccountBtn, #closeModal')) {
+      refreshSoon();
+    }
+  }, true);
+
+  const observer = new MutationObserver(() => ensureEntryPoints());
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  ensureEntryPoints();
+})();
