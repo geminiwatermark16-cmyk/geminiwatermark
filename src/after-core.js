@@ -28,6 +28,7 @@ const modules = [
   './video-upscale-v1.js?v=20260818-2',
   './video-upscale-mp4-v2.js?v=20260818-2',
   './video-enhance-gpu-v2.js?v=20260818-1',
+  './video-paid-gate.js?v=20260819-1',
   './trust-enhancements.js?v=20260818-2',
   './india-trust.js?v=20260819-3',
 ];
