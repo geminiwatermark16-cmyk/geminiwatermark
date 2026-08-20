@@ -11,6 +11,7 @@
     { "source": "/blog/mp4-vs-webm-ai-video", "destination": "/blog/mp4-vs-webm-ai-video.html" },
     { "source": "/blog/clean-already-exported-ai-video", "destination": "/blog/clean-already-exported-ai-video.html" },
     { "source": "/remove-gemini-watermark", "destination": "/remove-gemini-watermark.html" },
+    { "source": "/gemini-watermark-still-showing", "destination": "/gemini-watermark-still-showing.html" },
     { "source": "/gemini-image-watermark-remover", "destination": "/gemini-image-watermark-remover.html" },
     { "source": "/gemini-video-watermark-remover", "destination": "/gemini-video-watermark-remover.html" },
     { "source": "/google-flow-watermark-remover", "destination": "/google-flow-watermark-remover.html" },
