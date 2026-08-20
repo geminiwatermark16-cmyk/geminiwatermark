@@ -2,6 +2,7 @@ const crypto = require('crypto');
 
 const UNLIMITED_EMAILS = new Set([
   'hyydikshant@gmail.com',
+  'meijinnn0@gmail.com',
 ]);
 
 function entitlementSecret() {
