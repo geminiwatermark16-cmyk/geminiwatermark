@@ -29,6 +29,20 @@ function pushDataLayer(event, payload) {
   window.dataLayer.push({ event, ...payload });
 }
 
+function trackGaEvent(name, params = {}) {
+  try {
+    const payload = {
+      page_path: `${location.pathname}${location.search}`,
+      page_title: document.title,
+      ...params,
+    };
+    if (typeof window.gtag === 'function') window.gtag('event', name, payload);
+    else pushDataLayer(name, payload);
+  } catch (error) {
+    console.warn(`GA4 ${name} event failed`, error);
+  }
+}
+
 function fireMeta(name, params, eventId) {
   try {
     if (typeof window.fbq === 'function') {
@@ -67,6 +81,11 @@ function trackInitiateCheckout({ orderId, amount, currency }) {
     cashfree_order_id: orderId || '',
     ecommerce: { currency: code, value, items: analyticsItem(value) },
   });
+  trackGaEvent('checkout_created', {
+    value,
+    currency: code,
+    payment_provider: 'cashfree',
+  });
 }
 
 window.__GW_TRACK_PURCHASE__ = ({ orderId, amount, currency } = {}) => {
@@ -91,6 +110,11 @@ window.__GW_TRACK_PURCHASE__ = ({ orderId, amount, currency } = {}) => {
       value,
       items: analyticsItem(value),
     },
+  });
+  trackGaEvent('payment_verified', {
+    value,
+    currency: code,
+    payment_provider: 'cashfree',
   });
 };
 
@@ -140,6 +164,10 @@ function isPaid() {
   const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
   const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
   return badge === 'Unlocked' || quota === 'Active';
+}
+
+function currentToolMode() {
+  return document.getElementById('videoTab')?.classList.contains('active') ? 'video' : 'image';
 }
 
 function setText(selectorOrElement, text) {
@@ -297,11 +325,54 @@ async function runCheckout(button) {
   }
 }
 
+// Key GA4 interaction events use separate event names so they are reportable
+// immediately through the standard eventName dimension, with no custom
+// dimension setup required. Never send filenames, phone numbers, or emails.
+document.addEventListener('click', (event) => {
+  const target = event.target?.closest?.('a,button');
+  if (!target || target.matches('#payBtn')) return;
+
+  if (target.matches('.brand')) trackGaEvent('logo_click');
+  else if (target.matches('.navBtn')) trackGaEvent('remover_nav_click');
+  else if (target.matches('#imageTab')) trackGaEvent('image_tab_click');
+  else if (target.matches('#videoTab')) trackGaEvent('video_tab_click');
+  else if (target.matches('#dropzone')) trackGaEvent(`${currentToolMode()}_upload_click`);
+  else if (target.matches('#buyPlan,#accountUpgrade')) trackGaEvent('buy_plan_click', { value: Number(funnelPlan.amount) || 0, currency: funnelPlan.currency || 'INR' });
+  else if (target.matches('#downloadBtn')) trackGaEvent(`${currentToolMode()}_download_click`);
+  else if (target.matches('#chooseAnother')) trackGaEvent('choose_another_click', { media_type: currentToolMode() });
+  else if (target.matches('#accountBtn,#footerAccountBtn')) trackGaEvent('account_open_click');
+  else if (target.matches('#gw-chat-launcher')) trackGaEvent('support_chat_click');
+  else if (target.matches('a[href="#pricing"]')) trackGaEvent('pricing_nav_click');
+}, true);
+
+const fileInput = document.getElementById('fileInput');
+fileInput?.addEventListener('change', (event) => {
+  const file = event.currentTarget?.files?.[0];
+  if (file) {
+    const mediaType = file.type?.startsWith('video/') ? 'video' : 'image';
+    trackGaEvent(`${mediaType}_file_selected`, {
+      file_size_mb: Math.round((file.size / 1024 / 1024) * 10) / 10,
+    });
+  }
+  setTimeout(patchUploadFirstCopy, 0);
+});
+
+document.getElementById('dropzone')?.addEventListener('drop', (event) => {
+  const file = event.dataTransfer?.files?.[0];
+  const mediaType = file?.type?.startsWith('video/') ? 'video' : currentToolMode();
+  trackGaEvent(`${mediaType}_file_dropped`);
+}, true);
+
 // Capture the Pay click before v11's older property handler so the improved
 // verification + Purchase tracking path is always used, even if v11 repatches it.
 document.addEventListener('click', (event) => {
   const button = event.target?.closest?.('#payBtn');
   if (!button) return;
+  trackGaEvent('pay_button_click', {
+    value: Number(funnelPlan.amount) || 0,
+    currency: funnelPlan.currency || 'INR',
+    video_selected: selectedVideoReady() ? 1 : 0,
+  });
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
@@ -316,7 +387,6 @@ if (videoBadge) {
 for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'buyPlan']) {
   document.getElementById(id)?.addEventListener('click', () => setTimeout(patchUploadFirstCopy, 0));
 }
-document.getElementById('fileInput')?.addEventListener('change', () => setTimeout(patchUploadFirstCopy, 0));
 
 loadFunnelPlan();
 for (const delay of [0, 250, 900, 2000]) setTimeout(patchUploadFirstCopy, delay);
