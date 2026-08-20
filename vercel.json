@@ -43,6 +43,24 @@
       ]
     },
     {
+      "source": "/media-converter",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, follow, noarchive" }
+      ]
+    },
+    {
+      "source": "/media-converter.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, follow, noarchive" }
+      ]
+    },
+    {
+      "source": "/media-converter-v2.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, follow, noarchive" }
+      ]
+    },
+    {
       "source": "/admin",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
