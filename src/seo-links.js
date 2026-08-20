@@ -2,13 +2,14 @@
   const downloaderPath = '/media-converter';
   const links = [
     ['/remove-gemini-watermark', 'Remove Gemini watermark'],
+    ['/gemini-watermark-still-showing', 'Gemini watermark still showing?'],
     ['/gemini-image-watermark-remover', 'Gemini image remover'],
     ['/gemini-video-watermark-remover', 'Gemini video remover'],
     ['/google-flow-watermark-remover', 'Google Flow remover'],
     ['/veo-watermark-remover', 'Veo watermark remover'],
+    ['/blog/how-to-turn-off-gemini-visible-watermark', 'Gemini / Flow watermark policy 2026'],
     [downloaderPath + '?platform=instagram', 'Instagram Reel Downloader'],
     [downloaderPath + '?platform=pinterest', 'Pinterest Video Downloader'],
-    ['/blog/how-to-turn-off-gemini-visible-watermark', 'Gemini Media watermark 2026'],
     ['/blog', 'Creator guides'],
     ['/blog/clean-ai-video-without-cropping', '1080×1920 video guide'],
   ];
@@ -30,7 +31,11 @@
       .gwSocialCard h3{font-size:24px;margin:0 0 8px;color:#fff}
       .gwSocialCard p{font-size:14px;line-height:1.55;margin:0 0 20px;color:#9f9fa8}
       .gwSocialCta{display:inline-flex;align-items:center;gap:7px;font-weight:850;color:#fff}
-      @media(max-width:760px){.gwSocialTools{padding:52px 0}.gwSocialCards{grid-template-columns:1fr}}
+      .gwSeoIntent{padding:64px 0;background:#f5f5f2;color:#111}
+      .gwSeoIntentGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+      .gwSeoIntent a{display:block;border:1px solid rgba(17,17,17,.12);border-radius:20px;padding:22px;color:#111;text-decoration:none;background:#fff}
+      .gwSeoIntent h3{margin:0 0 8px;font-size:22px}.gwSeoIntent p{margin:0;line-height:1.55;color:#555}
+      @media(max-width:760px){.gwSocialTools{padding:52px 0}.gwSocialCards,.gwSeoIntentGrid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
     return true;
@@ -48,6 +53,28 @@
     a.href = downloaderPath;
     a.textContent = 'Instagram / Pinterest';
     a.setAttribute('aria-label', 'Instagram Reel and Pinterest Video Downloader');
+    return true;
+  }
+
+  function installSeoIntentLinks() {
+    if (document.querySelector('[data-seo-intent-home]')) return true;
+    const pricing = document.querySelector('#pricing');
+    const main = document.querySelector('main');
+    if (!pricing || !main) return false;
+    const section = document.createElement('section');
+    section.className = 'gwSeoIntent';
+    section.setAttribute('data-seo-intent-home', '1');
+    section.innerHTML = `
+      <div class="wrap">
+        <small>GEMINI & FLOW HELP</small>
+        <h2>Watermark still showing?</h2>
+        <p class="sectionLead">Check current Gemini and Google Flow watermark rules before editing an export. Visible watermark behavior can depend on tier, region and whether the file was already exported.</p>
+        <div class="gwSeoIntentGrid">
+          <a href="/gemini-watermark-still-showing"><h3>Gemini / Flow watermark still showing</h3><p>Troubleshoot plan tier, region, account entitlement, old exports and SynthID.</p></a>
+          <a href="/blog/how-to-turn-off-gemini-visible-watermark"><h3>Gemini & Flow watermark policy 2026</h3><p>Understand when a visible watermark may appear and what changes for new vs already-exported media.</p></a>
+        </div>
+      </div>`;
+    pricing.insertAdjacentElement('afterend', section);
     return true;
   }
 
@@ -109,9 +136,10 @@
   function install() {
     installStyles();
     const headerDone = installHeaderLink();
+    const intentDone = installSeoIntentLinks();
     const socialDone = installSocialTools();
     const footerDone = installFooterLinks();
-    return headerDone && socialDone && footerDone;
+    return headerDone && intentDone && socialDone && footerDone;
   }
 
   if (install()) return;
