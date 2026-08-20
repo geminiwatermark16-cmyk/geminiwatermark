@@ -1,4 +1,5 @@
-full repo production deploy trigger 2026-08-19 03:38 IST
-video-first ad traffic refresh
-video tab first + default active + highlighted
-₹99 plan becomes active only after Cashfree payment verification
+full repo production deploy trigger 2026-08-20 13:12 IST
+SEO troubleshooting page deploy refresh
+route: /gemini-watermark-still-showing
+sitemap + internal links updated
+force production redeploy after previous Vercel account block
