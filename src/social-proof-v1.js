@@ -1,5 +1,5 @@
 (() => {
-  const STYLE_ID = 'gw-social-proof-v1-style';
+  const STYLE_ID = 'gw-social-proof-v2-style';
   const ROOT_ID = 'gwSocialProof';
 
   const ensureStyle = () => {
@@ -14,11 +14,42 @@
       .gwProofHead p{margin:0;max-width:330px;font-size:11px;line-height:1.55;color:#6d7178}
       .gwProofStats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
       .gwProofStat{padding:15px;border:1px solid #e3e4df;background:#f8f8f5;border-radius:15px}.gwProofStat strong{display:block;font-size:23px;line-height:1;color:#111318;letter-spacing:-.04em}.gwProofStat span{display:block;margin-top:6px;font-size:10px;line-height:1.4;color:#6b6f76}
-      .gwFeedbackWrap{display:none;margin-top:18px;padding-top:18px;border-top:1px solid #e7e8e3}.gwFeedbackWrap.show{display:block}.gwFeedbackWrap h3{margin:0 0 10px;font-size:13px;color:#111318}.gwFeedbackGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.gwFeedbackCard{margin:0;overflow:hidden;border:1px solid #e1e2dd;border-radius:14px;background:#f7f7f4;aspect-ratio:3/4}.gwFeedbackCard img{width:100%;height:100%;object-fit:cover;display:block}
+      .gwFeedbackWrap{margin-top:18px;padding-top:18px;border-top:1px solid #e7e8e3}.gwFeedbackWrap h3{margin:0 0 10px;font-size:13px;color:#111318}.gwFeedbackGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+      .gwFeedbackCard{position:relative;margin:0;overflow:hidden;border:1px solid #e1e2dd;border-radius:14px;background:linear-gradient(180deg,#fafafa 0%,#f3f4f1 100%);aspect-ratio:3/4;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+      .gwFeedbackCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+      .gwSampleTag{display:inline-flex;align-items:center;width:max-content;padding:5px 7px;border-radius:999px;background:#111318;color:#fff;font-size:8px;font-weight:900;letter-spacing:.1em}
+      .gwSampleAvatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#e6e8ff;color:#4c56b8;font-size:12px;font-weight:900;margin-top:8px}
+      .gwSampleStars{font-size:11px;letter-spacing:1px;margin:8px 0 6px;color:#111318}.gwSampleText{font-size:11px;line-height:1.5;color:#34383f;margin:0}.gwSampleName{font-size:9px;color:#777b82;margin-top:8px}
       .gwProofNote{margin:11px 0 0!important;font-size:9px!important;line-height:1.45!important;color:#8a8e95!important}
       @media(max-width:760px){.gwSocialProof{padding:17px;border-radius:19px}.gwProofHead{display:block}.gwProofHead p{margin-top:8px;max-width:none}.gwProofStats{grid-template-columns:1fr}.gwFeedbackGrid{grid-template-columns:repeat(2,1fr)}}
     `;
     document.head.appendChild(style);
+  };
+
+  const sampleFeedback = [
+    { initials:'AK', text:'Sample feedback: the upload-first flow is simple and easy to understand.', name:'Example creator review' },
+    { initials:'RS', text:'Sample feedback: the video workflow feels fast and clear on mobile.', name:'Example creator review' },
+    { initials:'MK', text:'Sample feedback: useful for keeping the original 9:16 frame without cropping.', name:'Example creator review' },
+    { initials:'SP', text:'Sample feedback: pricing and 30-day access are explained clearly before checkout.', name:'Example creator review' },
+    { initials:'NV', text:'Sample feedback: the browser-based process is straightforward for exported videos.', name:'Example creator review' },
+  ];
+
+  const addSamples = (grid) => {
+    grid.innerHTML = '';
+    sampleFeedback.forEach((item) => {
+      const card = document.createElement('figure');
+      card.className = 'gwFeedbackCard';
+      card.innerHTML = `
+        <div>
+          <span class="gwSampleTag">SAMPLE</span>
+          <div class="gwSampleAvatar">${item.initials}</div>
+          <div class="gwSampleStars">★★★★★</div>
+          <p class="gwSampleText">${item.text}</p>
+        </div>
+        <figcaption class="gwSampleName">${item.name}</figcaption>
+      `;
+      grid.appendChild(card);
+    });
   };
 
   const mount = () => {
@@ -47,10 +78,10 @@
         <div class="gwProofStat"><strong>30 days</strong><span>video access with no automatic renewal</span></div>
       </div>
       <div class="gwFeedbackWrap" id="gwFeedbackWrap">
-        <h3>Real creator feedback</h3>
+        <h3>Creator feedback layout</h3>
         <div class="gwFeedbackGrid" id="gwFeedbackGrid"></div>
       </div>
-      <p class="gwProofNote">Creator count is based on the business's reported real usage. Feedback images are shown only when real customer screenshots are provided.</p>
+      <p class="gwProofNote">The 500+ creator count is based on the business's reported real usage. Cards marked SAMPLE are illustrative placeholders, not customer quotes. Real screenshots automatically replace them when uploaded.</p>
     `;
 
     const privacy = hero.querySelector('.privacy');
@@ -58,9 +89,11 @@
     else tool.insertAdjacentElement('afterend', section);
 
     const feedbackGrid = section.querySelector('#gwFeedbackGrid');
-    const feedbackWrap = section.querySelector('#gwFeedbackWrap');
+    addSamples(feedbackGrid);
+
     const sources = [1,2,3,4,5].map((n) => `/assets/testimonials/feedback-${n}.webp`);
-    let loaded = 0;
+    const loadedImages = [];
+    let finished = 0;
 
     sources.forEach((src, index) => {
       const img = new Image();
@@ -68,12 +101,33 @@
       img.loading = 'lazy';
       img.decoding = 'async';
       img.onload = () => {
-        const figure = document.createElement('figure');
-        figure.className = 'gwFeedbackCard';
-        figure.appendChild(img);
-        feedbackGrid?.appendChild(figure);
-        loaded += 1;
-        if (loaded > 0) feedbackWrap?.classList.add('show');
+        loadedImages.push(img);
+        finished += 1;
+        if (finished === sources.length && loadedImages.length) {
+          feedbackGrid.innerHTML = '';
+          loadedImages.forEach((loadedImg) => {
+            const figure = document.createElement('figure');
+            figure.className = 'gwFeedbackCard';
+            figure.appendChild(loadedImg);
+            feedbackGrid.appendChild(figure);
+          });
+          const title = section.querySelector('#gwFeedbackWrap h3');
+          if (title) title.textContent = 'Real creator feedback';
+        }
+      };
+      img.onerror = () => {
+        finished += 1;
+        if (finished === sources.length && loadedImages.length) {
+          feedbackGrid.innerHTML = '';
+          loadedImages.forEach((loadedImg) => {
+            const figure = document.createElement('figure');
+            figure.className = 'gwFeedbackCard';
+            figure.appendChild(loadedImg);
+            feedbackGrid.appendChild(figure);
+          });
+          const title = section.querySelector('#gwFeedbackWrap h3');
+          if (title) title.textContent = 'Real creator feedback';
+        }
       };
       img.src = src;
     });
