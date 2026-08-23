@@ -3,65 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Logo Motion Studio | geminiwatermark.space</title>
-  <meta name="description" content="Animate PNG and SVG logos in your browser with live preview, aspect-ratio controls and WebM export." />
+  <title>Logo Reel Studio | geminiwatermark.space</title>
+  <meta name="description" content="Upload one PNG logo, choose a ready-made reel template, sync cuts to music and export a branded vertical video from your browser." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://geminiwatermark.space/logo-motion" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/src/logo-motion.css?v=20260823-1" />
+  <link rel="stylesheet" href="/src/logo-motion.css?v=20260823-2" />
 </head>
 <body>
   <header class="lm-nav lm-wrap">
     <a class="lm-brand" href="/"><span>✦</span> geminiwatermark.space</a>
-    <nav><a href="/">Watermark Remover</a><a class="active" href="/logo-motion">Logo Motion</a></nav>
-    <a class="lm-pill" href="#studio">Create animation</a>
+    <nav><a href="/">Watermark Remover</a><a class="active" href="/logo-motion">Logo Reel Studio</a></nav>
+    <a class="lm-pill" href="#studio">Make a reel</a>
   </header>
 
   <main>
     <section class="lm-hero lm-wrap">
-      <div class="lm-badge">NEW · LOCAL BROWSER TOOL</div>
-      <h1>Turn a static logo into<br><span>motion in seconds.</span></h1>
-      <p>Upload a PNG or SVG, choose an animation, tune the look, preview it live and export a WebM — without uploading your logo to our server.</p>
+      <div class="lm-badge">7 REEL TEMPLATES · 8 SCENES EACH</div>
+      <h1>Upload one logo.<br><span>Get a complete branded reel.</span></h1>
+      <p>Your client gives you a transparent PNG. Pick a reel style and the logo is automatically placed across eight timed scenes. Add music, preview the match cuts and export one finished 9:16 video.</p>
     </section>
 
     <section id="studio" class="lm-studio lm-wrap">
       <aside class="lm-controls">
-        <div class="lm-control-head"><small>LOGO MOTION STUDIO</small><h2>Design your motion</h2></div>
-        <label class="lm-upload" for="logoInput"><input id="logoInput" type="file" accept="image/png,image/svg+xml,image/webp" hidden><span>↑</span><b>Upload logo</b><small>PNG, SVG or WebP</small></label>
+        <div class="lm-control-head"><small>LOGO REEL STUDIO</small><h2>Build the reel</h2></div>
 
-        <div class="lm-group"><label>Animation</label><div class="lm-grid" id="animationGrid">
-          <button data-animation="pulse" class="active">3D Pulse</button>
-          <button data-animation="reveal">Soft Reveal</button>
-          <button data-animation="spin">Spin In</button>
-          <button data-animation="bounce">Bounce</button>
-          <button data-animation="glow">Neon Glow</button>
-          <button data-animation="float">Float</button>
-        </div></div>
+        <label class="lm-upload" for="logoInput">
+          <input id="logoInput" type="file" accept="image/png,image/svg+xml,image/webp" hidden>
+          <span>↑</span><div><b>Upload client logo</b><small>Transparent PNG recommended</small></div>
+          <em id="logoFileName">PNG / SVG / WebP</em>
+        </label>
 
-        <div class="lm-group"><label>Aspect ratio</label><div class="lm-segment" id="ratioGroup"><button data-ratio="1:1" class="active">1:1</button><button data-ratio="9:16">9:16</button><button data-ratio="16:9">16:9</button></div></div>
+        <div class="lm-group">
+          <label>Choose reel template <span id="templateCount">1 / 7</span></label>
+          <div class="lm-template-grid" id="templateGrid"></div>
+        </div>
 
-        <div class="lm-group"><label for="bgColor">Background</label><div class="lm-row"><input id="bgColor" type="color" value="#0f1115"><input id="bgHex" type="text" value="#0f1115" maxlength="7"></div></div>
-        <div class="lm-group"><label for="duration">Duration <span id="durationValue">3.0s</span></label><input id="duration" type="range" min="1.5" max="8" step="0.5" value="3"></div>
-        <div class="lm-group"><label for="intensity">Intensity <span id="intensityValue">70%</span></label><input id="intensity" type="range" min="20" max="120" step="5" value="70"></div>
+        <div class="lm-group">
+          <label for="musicInput">Music <span id="musicState">optional</span></label>
+          <label class="lm-music" for="musicInput">
+            <input id="musicInput" type="file" accept="audio/*" hidden>
+            <b>♫ Add music</b><small id="musicFileName">MP3, WAV, M4A</small>
+          </label>
+          <div class="lm-beat-row"><label for="bpmInput">BPM</label><input id="bpmInput" type="number" min="60" max="200" value="120"><button id="detectBeatsBtn" type="button">Detect beats</button></div>
+        </div>
 
-        <button id="exportBtn" class="lm-export" disabled>Export WebM</button>
+        <div class="lm-group">
+          <label for="brandColor">Brand background</label>
+          <div class="lm-color-row"><input id="brandColor" type="color" value="#101216"><input id="brandHex" type="text" value="#101216" maxlength="7"></div>
+        </div>
+
+        <div class="lm-group lm-switch-row">
+          <label for="smartContrast">Auto contrast</label><input id="smartContrast" type="checkbox" checked>
+        </div>
+
+        <button id="previewBtn" class="lm-secondary" disabled>▶ Preview reel</button>
+        <button id="exportBtn" class="lm-export" disabled>Export video</button>
         <p id="status" class="lm-status">Upload a logo to begin.</p>
       </aside>
 
       <section class="lm-preview-card">
-        <div class="lm-preview-top"><div><small>LIVE PREVIEW</small><b id="previewLabel">3D Pulse · 1:1</b></div><button id="replayBtn" type="button">↻ Replay</button></div>
-        <div id="stageWrap" class="lm-stage-wrap square"><div id="stage" class="lm-stage"><div class="lm-empty" id="emptyState"><span>✦</span><b>Your animated logo appears here</b><small>Upload a transparent PNG or SVG for best results.</small></div><img id="logoPreview" alt="Uploaded logo preview" hidden></div></div>
-        <div class="lm-note">Your file stays in this browser session. Export uses your browser's built-in recording support.</div>
+        <div class="lm-preview-top">
+          <div><small>9:16 LIVE REEL PREVIEW</small><b id="previewLabel">Fashion Brand · 8 scenes</b></div>
+          <div class="lm-preview-actions"><button id="muteBtn" type="button">♫</button><button id="replayBtn" type="button">↻</button></div>
+        </div>
+
+        <div class="lm-stage-shell">
+          <canvas id="reelCanvas" width="540" height="960" aria-label="Logo reel preview"></canvas>
+          <div id="emptyState" class="lm-empty"><span>✦</span><b>Upload a logo</b><small>Then choose any of the seven reel templates.</small></div>
+          <div class="lm-scene-chip"><span id="sceneNumber">Scene 1 / 8</span><b id="sceneName">Cap</b></div>
+        </div>
+
+        <div class="lm-timeline" id="timeline"></div>
+        <div class="lm-note">Logo placement, scale, cut timing and mockup geometry are predefined per scene. Your logo file stays in this browser session.</div>
       </section>
     </section>
 
+    <section class="lm-library lm-wrap">
+      <div class="lm-library-head"><small>BUILT-IN REEL LIBRARY</small><h2>Seven ready-made brand stories.</h2><p>Each sample uses eight scenes and the same uploaded logo. Music can be beat-detected or timed from BPM.</p></div>
+      <div id="templateShowcase" class="lm-showcase"></div>
+    </section>
+
     <section class="lm-features lm-wrap">
-      <article><b>01</b><h3>Upload</h3><p>Drop in your PNG, SVG or WebP logo.</p></article>
-      <article><b>02</b><h3>Animate</h3><p>Pick a motion style and tune timing, intensity and background.</p></article>
-      <article><b>03</b><h3>Export</h3><p>Record the motion locally and save a WebM file.</p></article>
+      <article><b>01</b><h3>One logo</h3><p>Client uploads a single PNG, SVG or WebP logo.</p></article>
+      <article><b>02</b><h3>Eight scenes</h3><p>The logo is automatically fitted into every predefined scene.</p></article>
+      <article><b>03</b><h3>One export</h3><p>Scenes and music are merged into a single vertical video in-browser.</p></article>
     </section>
   </main>
 
-  <script src="/src/logo-motion.js?v=20260823-1"></script>
+  <script src="/src/logo-reel-templates.js?v=20260823-1"></script>
+  <script src="/src/logo-motion.js?v=20260823-2"></script>
 </body>
 </html>
