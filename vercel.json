@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/logo-motion", "destination": "/logo-motion.html" },
     { "source": "/media-converter", "destination": "/media-converter-v2.html" },
     { "source": "/blog", "destination": "/blog.html" },
     { "source": "/blog/how-to-turn-off-gemini-visible-watermark", "destination": "/blog/how-to-turn-off-gemini-visible-watermark.html" },

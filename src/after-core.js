@@ -86,6 +86,7 @@ const modules = [
   './video-paid-gate.js?v=20260819-1',
   './conversion-landing-v1.js?v=20260822-1',
   './social-proof-v1.js?v=20260823-1',
+  './logo-motion-entry.js?v=20260823-1',
   './trust-enhancements.js?v=20260818-2',
   './india-trust.js?v=20260819-3',
 ];
