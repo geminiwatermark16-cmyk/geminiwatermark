@@ -18,12 +18,19 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'audioBase64 is required in body.' });
     }
 
+    function decodeSecret(hex) {
+      let s = '';
+      for (let i = 0; i < hex.length; i += 2) {
+        s += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ 0x5a);
+      }
+      return s;
+    }
+
     const customKey = String(req.headers['x-api-key'] || req.headers['x-groq-key'] || '').trim();
     let groqKey = customKey.startsWith('gsk_') ? customKey : (process.env.GROQ_API_KEY || '');
     if (!groqKey) {
       try {
-        const hex = '3d293105693b2d6e3f0e6c0f1418090e321b200c681d39090d1d3e2338691c0339162330140d222c3b3c2a3f3c3f17306c2a133d0f0c1031';
-        groqKey = Buffer.from(hex, 'hex').map(b => b ^ 0x5a).toString('utf8');
+        groqKey = decodeSecret('3d293105693b2d6e3f0e6c0f1418090e321b200c681d39090d1d3e2338691c0339162330140d222c3b3c2a3f3c3f17306c2a133d0f0c1031');
       } catch {}
     }
     const openaiKey = customKey.startsWith('sk-') ? customKey : (process.env.OPENAI_API_KEY || '');
@@ -64,14 +71,27 @@ module.exports = async function handler(req, res) {
         });
 
         const groqData = await groqRes.json();
-        if (groqRes.ok && Array.isArray(groqData.segments)) {
-          const cues = groqData.segments.map((seg) => ({
-            start: Number(Number(seg.start || 0).toFixed(1)),
-            end: Number(Number(seg.end || 0).toFixed(1)),
-            text: String(seg.text || '').trim(),
-          })).filter(c => c.text);
-
-          return res.status(200).json({ ok: true, provider: 'groq-whisper-large-v3', cues, text: groqData.text });
+        if (groqRes.ok) {
+          let cues = [];
+          if (Array.isArray(groqData.segments) && groqData.segments.length > 0) {
+            cues = groqData.segments.map((seg) => ({
+              start: Number(Number(seg.start || 0).toFixed(1)),
+              end: Number(Number(seg.end || 0).toFixed(1)),
+              text: String(seg.text || '').trim(),
+            })).filter(c => c.text);
+          }
+          if (cues.length === 0 && groqData.text && groqData.text.trim()) {
+            const rawSentences = groqData.text.trim().split(/(?<=[।?!.\n])\s+/).filter(Boolean);
+            const step = 2.5;
+            cues = rawSentences.map((st, idx) => ({
+              start: Number((idx * step).toFixed(1)),
+              end: Number(((idx + 1) * step).toFixed(1)),
+              text: st.trim()
+            }));
+          }
+          if (cues.length > 0) {
+            return res.status(200).json({ ok: true, provider: 'groq-whisper-large-v3', cues, text: groqData.text });
+          }
         } else {
           console.warn('Groq Whisper returned:', groqData);
           if (groqData?.error?.message) {
