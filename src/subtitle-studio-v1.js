@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v15';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v16';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -667,7 +667,26 @@
     let lastActiveCue = null;
     let animLoopId = null;
 
+    function updateSamplePreview() {
+      if (video.src && videoFile) return;
+      subText.className = `gw-sub-text gw-style-${currentStyle}`;
+      if (currentAnim) {
+        void subText.offsetWidth;
+        subText.classList.add(`gw-anim-${currentAnim}`);
+      }
+      if (isKaraokeActive) {
+        subText.innerHTML = `<span class="gw-word active-word">AI</span> <span class="gw-word future-word">CAPTIONS</span> 🔥`;
+      } else {
+        subText.textContent = 'AI CAPTIONS 🔥';
+      }
+      subText.style.display = 'inline-block';
+    }
+
     function updateActiveSubtitle() {
+      if (!video.src || !videoFile) {
+        updateSamplePreview();
+        return;
+      }
       const t = video.currentTime;
       let active = null;
       for (let i = 0; i < cues.length; i++) {
@@ -1370,6 +1389,7 @@
 
     // Default initial cues
     renderCues();
+    updateSamplePreview();
   }
 
   ensureStyles();
