@@ -472,21 +472,29 @@
         const recognition = new SpeechRecognition();
         recognition.lang = lang;
         recognition.continuous = true;
-        recognition.interimResults = false;
+        recognition.interimResults = true;
         activeRecognition = recognition;
 
         recognition.onresult = (event) => {
           for (let i = event.resultIndex; i < event.results.length; ++i) {
-            const transcript = event.results[i][0].transcript.trim();
-            if (transcript) {
-              const now = Number(video.currentTime.toFixed(1));
+            const res = event.results[i];
+            const transcript = res[0].transcript.trim();
+            if (!transcript) continue;
+
+            const now = Number(video.currentTime.toFixed(1));
+
+            if (res.isFinal) {
               const start = Number(Math.max(0, phraseStart).toFixed(1));
-              const end = Number(Math.max(start + 1.2, now).toFixed(1));
+              const end = Number(Math.max(start + 1.0, now).toFixed(1));
               cues.push({ start, end, text: transcript });
               phraseStart = now;
               renderCues();
               updateActiveSubtitle();
-              transcribeStatus.textContent = `🎙️ Transcribed ${cues.length} subtitle cues so far...`;
+              transcribeStatus.textContent = `🎙️ Captured: "${transcript}" (${cues.length} lines total)`;
+            } else {
+              subText.textContent = transcript;
+              subText.style.display = 'inline-block';
+              transcribeStatus.textContent = `🎙️ Hearing: "${transcript}"...`;
             }
           }
         };
