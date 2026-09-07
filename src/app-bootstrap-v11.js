@@ -52,9 +52,10 @@ function promoteVideoForAdTraffic() {
   if (tabs.firstElementChild !== videoTab) tabs.insertBefore(videoTab, imageTab);
   videoTab.classList.add('gw-video-priority');
 
-  // Use the app's own click handler so all mode state and payment gating stay
-  // in sync.
-  if (!videoTab.classList.contains('active')) videoTab.click();
+  if (!videoTab.classList.contains('active')) {
+    if (typeof window.__GW_SWITCH_MODE__ === 'function') window.__GW_SWITCH_MODE__('video');
+    else if (typeof videoTab.onclick === 'function') videoTab.onclick();
+  }
 }
 
 const videoPriorityStyle = document.createElement('style');

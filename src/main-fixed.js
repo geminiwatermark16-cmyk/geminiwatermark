@@ -264,11 +264,12 @@ function selectFile(file) {
   showFile(file);
 }
 
-$('dropzone').onclick = () => { if (state.mode === 'video' && !canVideo()) { openModal(); return; } $('fileInput').click(); };
+$('dropzone').onclick = () => $('fileInput').click();
 $('fileInput').onchange = (event) => event.target.files[0] && selectFile(event.target.files[0]);
 $('dropzone').ondragover = (event) => { event.preventDefault(); $('dropzone').classList.add('drag'); };
 $('dropzone').ondragleave = () => $('dropzone').classList.remove('drag');
 $('dropzone').ondrop = (event) => { event.preventDefault(); $('dropzone').classList.remove('drag'); if (event.dataTransfer.files[0]) selectFile(event.dataTransfer.files[0]); };
+window.__GW_SWITCH_MODE__ = switchMode;
 $('imageTab').onclick = () => switchMode('image'); $('videoTab').onclick = () => switchMode('video');
 $('chooseAnother').onclick = () => switchMode(state.mode);
 $('videoProfile').onchange = () => { if (state.mode === 'video' && state.videoSize) setMessage(videoSupportMessage(state.videoSize.width, state.videoSize.height)); };

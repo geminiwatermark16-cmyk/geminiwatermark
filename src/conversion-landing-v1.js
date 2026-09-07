@@ -86,7 +86,10 @@
     if (params.get('mode') === 'image') return false;
     const videoTab = document.getElementById('videoTab');
     if (!videoTab) return false;
-    if (!videoTab.classList.contains('active')) videoTab.click();
+    if (!videoTab.classList.contains('active')) {
+      if (typeof window.__GW_SWITCH_MODE__ === 'function') window.__GW_SWITCH_MODE__('video');
+      else if (typeof videoTab.onclick === 'function') videoTab.onclick();
+    }
     return true;
   };
 

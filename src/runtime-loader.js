@@ -79,16 +79,7 @@ source = source.replace(
   "if (!state.paid && data.reason === 'invalid') localStorage.removeItem(TOKEN_KEY);"
 );
 
-source = source
-  .replace("Images free · 21 videos free · then ₹99", "Images free · 21 videos free · then ₹99 / 30 days")
-  .replace("then video processing unlocks with the ₹99 plan.", "then video processing unlocks for 30 days with the ₹99 plan.")
-  .replace("<b>₹99</b><span>Video plan</span>", "<b>₹99</b><span>30-day video plan</span>")
-  .replace("Video 22 onward requires the ₹99 plan.", "Video 22 onward requires the ₹99 plan, valid for 30 days from successful payment.")
-  .replace("<div class=\"price\"><b>₹99</b><em>video plan</em></div>", "<div class=\"price\"><b>₹99</b><em>for 30 days</em></div>")
-  .replace("<li>New Gemini diamond + old Veo mode</li></ul><button id=\"buyPlan\">", "<li>New Gemini diamond + old Veo mode</li><li>30-day access · no automatic renewal</li></ul><button id=\"buyPlan\">")
-  .replace("Continue with the ₹99 video plan.", "Continue with the ₹99 video plan. Access expires 30 days after successful payment.")
-  .replace("<div class=\"payPrice\"><b>₹99</b><span>one-time checkout</span></div>", "<div class=\"payPrice\"><b>₹99</b><span>30 days · no auto-renewal</span></div>")
-  .replace("Plan unlocks only after Cashfree payment is verified on the server.", "Plan unlocks only after Cashfree payment is verified on the server and remains active for 30 days.");
+
 
 source = source.replace(
   '<a class="navBtn" href="#tool">Remove watermark</a>',
