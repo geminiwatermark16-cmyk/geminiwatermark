@@ -38,6 +38,102 @@ module.exports = async function handler(req, res) {
 
     const langCode = (language || 'hi').toLowerCase().slice(0, 2);
 
+    function buildFineSyncedCues(data, maxWords = 3, maxDur = 1.8) {
+      // 1. If word-level timestamps are provided (Groq / OpenAI Whisper with word granularities)
+      if (Array.isArray(data?.words) && data.words.length > 0) {
+        const validWords = data.words
+          .map(w => ({
+            word: String(w.word || '').trim(),
+            start: Number(w.start || 0),
+            end: Number(w.end || (Number(w.start || 0) + 0.35))
+          }))
+          .filter(w => w.word.length > 0);
+
+        if (validWords.length > 0) {
+          const cues = [];
+          let currentChunk = [];
+          let chunkStart = null;
+
+          for (let i = 0; i < validWords.length; i++) {
+            const item = validWords[i];
+            if (chunkStart === null) chunkStart = item.start;
+            currentChunk.push(item);
+
+            const currentDur = item.end - chunkStart;
+            const isTerminalPunctuation = /[.?!।,\n]/.test(item.word);
+            const isNextPause = (i < validWords.length - 1) && (validWords[i + 1].start - item.end > 0.45);
+
+            if (currentChunk.length >= maxWords || currentDur >= maxDur || isTerminalPunctuation || isNextPause) {
+              cues.push({
+                start: Number(chunkStart.toFixed(1)),
+                end: Number(item.end.toFixed(1)),
+                text: currentChunk.map(c => c.word).join(' ').trim()
+              });
+              currentChunk = [];
+              chunkStart = null;
+            }
+          }
+
+          if (currentChunk.length > 0) {
+            cues.push({
+              start: Number(chunkStart.toFixed(1)),
+              end: Number(currentChunk[currentChunk.length - 1].end.toFixed(1)),
+              text: currentChunk.map(c => c.word).join(' ').trim()
+            });
+          }
+
+          const cleanCues = cues.filter(c => c.text);
+          if (cleanCues.length > 0) return cleanCues;
+        }
+      }
+
+      // 2. If segments are provided, slice them into 2-3 word rapid rhythmic cues
+      if (Array.isArray(data?.segments) && data.segments.length > 0) {
+        const cues = [];
+        for (const seg of data.segments) {
+          const words = String(seg.text || '').trim().split(/\s+/).filter(Boolean);
+          if (words.length === 0) continue;
+
+          const segStart = Number(seg.start || 0);
+          const segEnd = Number(seg.end || segStart + 2.0);
+          const segDur = Math.max(0.6, segEnd - segStart);
+          const timePerWord = segDur / words.length;
+
+          for (let i = 0; i < words.length; i += maxWords) {
+            const chunk = words.slice(i, i + maxWords);
+            const cStart = segStart + i * timePerWord;
+            const cEnd = Math.min(segEnd, cStart + chunk.length * timePerWord);
+            cues.push({
+              start: Number(cStart.toFixed(1)),
+              end: Number(cEnd.toFixed(1)),
+              text: chunk.join(' ')
+            });
+          }
+        }
+        const cleanCues = cues.filter(c => c.text);
+        if (cleanCues.length > 0) return cleanCues;
+      }
+
+      // 3. Fallback on raw text
+      if (data?.text && data.text.trim()) {
+        const words = data.text.trim().split(/\s+/).filter(Boolean);
+        const cues = [];
+        const step = 1.3;
+        for (let i = 0; i < words.length; i += maxWords) {
+          const chunk = words.slice(i, i + maxWords);
+          const idx = Math.floor(i / maxWords);
+          cues.push({
+            start: Number((idx * step).toFixed(1)),
+            end: Number(((idx + 1) * step).toFixed(1)),
+            text: chunk.join(' ')
+          });
+        }
+        return cues;
+      }
+
+      return [];
+    }
+
     // 1. Try Groq Whisper (Ultra-fast, uses whisper-large-v3, free tier)
     if (groqKey) {
       try {
@@ -51,6 +147,8 @@ module.exports = async function handler(req, res) {
 
         pushField('model', 'whisper-large-v3');
         pushField('response_format', 'verbose_json');
+        pushField('timestamp_granularities[]', 'word');
+        pushField('timestamp_granularities[]', 'segment');
         if (langCode) pushField('language', langCode);
 
         // Add file
@@ -72,25 +170,9 @@ module.exports = async function handler(req, res) {
 
         const groqData = await groqRes.json();
         if (groqRes.ok) {
-          let cues = [];
-          if (Array.isArray(groqData.segments) && groqData.segments.length > 0) {
-            cues = groqData.segments.map((seg) => ({
-              start: Number(Number(seg.start || 0).toFixed(1)),
-              end: Number(Number(seg.end || 0).toFixed(1)),
-              text: String(seg.text || '').trim(),
-            })).filter(c => c.text);
-          }
-          if (cues.length === 0 && groqData.text && groqData.text.trim()) {
-            const rawSentences = groqData.text.trim().split(/(?<=[।?!.\n])\s+/).filter(Boolean);
-            const step = 2.5;
-            cues = rawSentences.map((st, idx) => ({
-              start: Number((idx * step).toFixed(1)),
-              end: Number(((idx + 1) * step).toFixed(1)),
-              text: st.trim()
-            }));
-          }
+          const cues = buildFineSyncedCues(groqData, 3, 1.8);
           if (cues.length > 0) {
-            return res.status(200).json({ ok: true, provider: 'groq-whisper-large-v3', cues, text: groqData.text });
+            return res.status(200).json({ ok: true, provider: 'groq-whisper-large-v3', cues, text: groqData.text, words: groqData.words });
           }
         } else {
           console.warn('Groq Whisper returned:', groqData);
@@ -116,6 +198,8 @@ module.exports = async function handler(req, res) {
 
         pushField('model', 'whisper-1');
         pushField('response_format', 'verbose_json');
+        pushField('timestamp_granularities[]', 'word');
+        pushField('timestamp_granularities[]', 'segment');
         if (langCode) pushField('language', langCode);
 
         chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.${format}"\r\nContent-Type: audio/${format}\r\n\r\n`));
@@ -135,14 +219,11 @@ module.exports = async function handler(req, res) {
         });
 
         const oaiData = await oaiRes.json();
-        if (oaiRes.ok && Array.isArray(oaiData.segments)) {
-          const cues = oaiData.segments.map((seg) => ({
-            start: Number(Number(seg.start || 0).toFixed(1)),
-            end: Number(Number(seg.end || 0).toFixed(1)),
-            text: String(seg.text || '').trim(),
-          })).filter(c => c.text);
-
-          return res.status(200).json({ ok: true, provider: 'openai-whisper', cues, text: oaiData.text });
+        if (oaiRes.ok) {
+          const cues = buildFineSyncedCues(oaiData, 3, 1.8);
+          if (cues.length > 0) {
+            return res.status(200).json({ ok: true, provider: 'openai-whisper', cues, text: oaiData.text });
+          }
         } else {
           console.warn('OpenAI Whisper returned:', oaiData);
           if (oaiData?.error?.message) {
@@ -171,7 +252,7 @@ module.exports = async function handler(req, res) {
                     }
                   },
                   {
-                    text: `Transcribe the spoken audio into subtitle cues with exact timing. Return ONLY a valid JSON array of objects with keys "start" (float seconds), "end" (float seconds), and "text" (transcribed speech in the spoken language, e.g. Hindi or English). Schema: [{"start": 0.0, "end": 2.5, "text": "transcribed speech"}]`
+                    text: `Transcribe the spoken audio into fine-grained, rhythmic 2 to 3 word subtitle cues with exact start and end times for Instagram Reels/Shorts captions (where each phrase appears as spoken and vanishes when the next begins). Schema: [{"start": 0.0, "end": 1.4, "text": "spoken words"}]`
                   }
                 ]
               }

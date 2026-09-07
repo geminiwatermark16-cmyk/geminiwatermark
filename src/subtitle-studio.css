@@ -319,6 +319,24 @@
   gap: 8px;
 }
 
+.gw-cue-item.active-cue {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  transform: translateX(3px);
+  transition: all 0.15s ease;
+}
+
+@keyframes gwCuePop {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.gw-sub-text.gw-cue-pop {
+  animation: gwCuePop 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 @media(max-width: 820px) {
   .gw-sub-studio-grid {
     grid-template-columns: 1fr;

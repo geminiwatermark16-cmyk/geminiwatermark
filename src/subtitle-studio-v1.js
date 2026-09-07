@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v9';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v14';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -34,24 +34,24 @@
   // Generate synced cues matching video duration & language
   function generateDefaultCues(duration, lang = 'hi-IN') {
     const dur = Math.max(3, Number(duration) || 12);
-    const step = 3.0;
+    const step = 1.5;
     const count = Math.max(1, Math.ceil(dur / step));
     const isHindi = String(lang).startsWith('hi');
 
     const hindiTemplates = [
       "वायरल रील वीडियो 🔥",
-      "ऑटो सबटाइटल्स रेडी",
+      "ऑटो सबटाइटल्स",
       "शानदार AI क्वालिटी",
       "लाइक और शेयर करें ✨",
-      "फॉलो करना न भूलें",
+      "फॉलो करें",
       "सुपर ट्रेंडिंग क्लिप",
       "फुल एचडी रील",
-      "कमेंट में बताएं कैसा लगा"
+      "कमेंट करें"
     ];
 
     const engTemplates = [
       "VIRAL REEL VIDEO 🔥",
-      "AUTO SUBTITLES READY",
+      "AUTO SUBTITLES",
       "AMAZING AI QUALITY",
       "LIKE AND SHARE ✨",
       "FOLLOW FOR MORE",
@@ -584,19 +584,78 @@
       renderCues();
     };
 
-    // Synced Subtitle Playback
+    // Frame-Accurate Synced Subtitle Playback (60 FPS loop)
+    let lastActiveText = '';
+    let animLoopId = null;
+
     function updateActiveSubtitle() {
       const t = video.currentTime;
-      const active = cues.find(c => t >= c.start && t <= c.end);
+      let active = null;
+      for (let i = 0; i < cues.length; i++) {
+        const c = cues[i];
+        const isLast = (i === cues.length - 1);
+        if (t >= c.start && (isLast ? t <= c.end : t < c.end)) {
+          active = c;
+          break;
+        }
+      }
+
       if (active && active.text.trim()) {
-        subText.textContent = active.text;
+        if (lastActiveText !== active.text) {
+          lastActiveText = active.text;
+          subText.textContent = active.text;
+          subText.classList.remove('gw-cue-pop');
+          void subText.offsetWidth; // trigger reflow
+          subText.classList.add('gw-cue-pop');
+        }
         subText.style.display = 'inline-block';
       } else {
+        lastActiveText = '';
         subText.textContent = '';
         subText.style.display = 'none';
       }
+
+      highlightActiveCueItem(t);
     }
 
+    function highlightActiveCueItem(currentTime) {
+      const items = cueList.querySelectorAll('.gw-cue-item');
+      if (items.length === 0) return;
+      for (let i = 0; i < cues.length; i++) {
+        const c = cues[i];
+        const item = items[i];
+        if (!item) continue;
+        const isLast = (i === cues.length - 1);
+        if (currentTime >= c.start && (isLast ? currentTime <= c.end : currentTime < c.end)) {
+          if (!item.classList.contains('active-cue')) {
+            items.forEach(it => it.classList.remove('active-cue'));
+            item.classList.add('active-cue');
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        } else if (item.classList.contains('active-cue')) {
+          item.classList.remove('active-cue');
+        }
+      }
+    }
+
+    function startPlaybackSync() {
+      if (animLoopId) cancelAnimationFrame(animLoopId);
+      function step() {
+        updateActiveSubtitle();
+        if (!video.paused && !video.ended) {
+          animLoopId = requestAnimationFrame(step);
+        }
+      }
+      animLoopId = requestAnimationFrame(step);
+    }
+
+    video.addEventListener('play', startPlaybackSync);
+    video.addEventListener('playing', startPlaybackSync);
+    video.addEventListener('pause', () => {
+      if (animLoopId) cancelAnimationFrame(animLoopId);
+      updateActiveSubtitle();
+    });
+    video.addEventListener('seeked', updateActiveSubtitle);
     video.addEventListener('timeupdate', updateActiveSubtitle);
 
     // Style Presets
@@ -848,21 +907,31 @@
         alert('Please paste or type text first.');
         return;
       }
+      // If multiple lines provided, use lines; otherwise split into 3-word punchy phrases
+      let phrases = [];
       const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (lines.length === 0) return;
+      if (lines.length > 1) {
+        phrases = lines;
+      } else {
+        const words = raw.split(/\s+/).filter(Boolean);
+        for (let i = 0; i < words.length; i += 3) {
+          phrases.push(words.slice(i, i + 3).join(' '));
+        }
+      }
+      if (phrases.length === 0) return;
 
-      const dur = video.duration || (lines.length * 3.0);
-      const lineDur = dur / lines.length;
-      cues = lines.map((text, idx) => ({
-        start: Number((idx * lineDur).toFixed(1)),
-        end: Number(((idx + 1) * lineDur).toFixed(1)),
+      const dur = video.duration || (phrases.length * 1.5);
+      const phraseDur = dur / phrases.length;
+      cues = phrases.map((text, idx) => ({
+        start: Number((idx * phraseDur).toFixed(1)),
+        end: Number(((idx + 1) * phraseDur).toFixed(1)),
         text: text
       }));
 
       renderCues();
       updateActiveSubtitle();
       pasteModal.classList.add('hidden');
-      transcribeStatus.textContent = `✅ Successfully synced ${cues.length} lines of your script across the video!`;
+      transcribeStatus.textContent = `✅ Successfully synced ${cues.length} subtitle cues across the video!`;
     };
 
     // 5. Upload .SRT / .VTT
