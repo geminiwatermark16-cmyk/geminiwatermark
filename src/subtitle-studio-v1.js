@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-1';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v3';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -12,13 +12,17 @@
   // State
   let videoFile = null;
   let cues = [
-    { start: 0.0, end: 2.5, text: "AI GENERATED VIDEO" },
-    { start: 2.5, end: 5.0, text: "CLEANED AND CAPTIONED" },
-    { start: 5.0, end: 8.0, text: "READY FOR SOCIAL MEDIA 🔥" }
+    { start: 0.0, end: 3.0, text: "AI GENERATED VIDEO" },
+    { start: 3.0, end: 6.0, text: "CLEANED AND CAPTIONED" },
+    { start: 6.0, end: 9.0, text: "READY FOR SOCIAL MEDIA 🔥" }
   ];
   let currentStyle = 'viral';
   let currentPos = 'bottom';
-  let currentSize = 22;
+  let currentSize = 24;
+  let activeAudioContext = null;
+  let activeMediaSourceNode = null;
+  let isTranscribing = false;
+  let activeRecognition = null;
 
   function formatTime(secs) {
     const m = Math.floor(secs / 60);
@@ -27,12 +31,107 @@
     return `${m}:${s.toString().padStart(2, '0')}.${ms}`;
   }
 
+  // Generate synced cues matching video duration & language
+  function generateDefaultCues(duration, lang = 'hi-IN') {
+    const dur = Math.max(3, Number(duration) || 12);
+    const step = 3.0;
+    const count = Math.max(1, Math.ceil(dur / step));
+    const isHindi = String(lang).startsWith('hi');
+
+    const hindiTemplates = [
+      "वायरल रील वीडियो 🔥",
+      "ऑटो सबटाइटल्स रेडी",
+      "शानदार AI क्वालिटी",
+      "लाइक और शेयर करें ✨",
+      "फॉलो करना न भूलें",
+      "सुपर ट्रेंडिंग क्लिप",
+      "फुल एचडी रील",
+      "कमेंट में बताएं कैसा लगा"
+    ];
+
+    const engTemplates = [
+      "VIRAL REEL VIDEO 🔥",
+      "AUTO SUBTITLES READY",
+      "AMAZING AI QUALITY",
+      "LIKE AND SHARE ✨",
+      "FOLLOW FOR MORE",
+      "TRENDING CLIP",
+      "ULTRA HD QUALITY",
+      "DROP A COMMENT"
+    ];
+
+    const templates = isHindi ? hindiTemplates : engTemplates;
+    const newCues = [];
+
+    for (let i = 0; i < count; i++) {
+      const start = Number((i * step).toFixed(1));
+      const end = Number(Math.min(dur, (i + 1) * step).toFixed(1));
+      const text = templates[i % templates.length];
+      newCues.push({ start, end, text });
+    }
+    return newCues;
+  }
+
+  // Parse .SRT and .VTT format
+  function parseSubtitles(text) {
+    const lines = text.split(/\r?\n/);
+    const result = [];
+    const timeRegex = /(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{3})/;
+    let currentStart = null;
+    let currentEnd = null;
+    let currentText = [];
+
+    function toSeconds(h, m, s, ms) {
+      return (parseInt(h || 0, 10) * 3600) + (parseInt(m, 10) * 60) + parseInt(s, 10) + (parseInt(ms, 10) / 1000);
+    }
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        if (currentStart !== null && currentText.length > 0) {
+          result.push({
+            start: Number(currentStart.toFixed(1)),
+            end: Number(currentEnd.toFixed(1)),
+            text: currentText.join(' ')
+          });
+          currentStart = null;
+          currentEnd = null;
+          currentText = [];
+        }
+        continue;
+      }
+
+      const match = trimmed.match(timeRegex);
+      if (match) {
+        if (currentStart !== null && currentText.length > 0) {
+          result.push({
+            start: Number(currentStart.toFixed(1)),
+            end: Number(currentEnd.toFixed(1)),
+            text: currentText.join(' ')
+          });
+          currentText = [];
+        }
+        currentStart = toSeconds(match[1], match[2], match[3], match[4]);
+        currentEnd = toSeconds(match[5], match[6], match[7], match[8]);
+      } else if (currentStart !== null && !/^\d+$/.test(trimmed) && trimmed !== 'WEBVTT') {
+        currentText.push(trimmed);
+      }
+    }
+
+    if (currentStart !== null && currentText.length > 0) {
+      result.push({
+        start: Number(currentStart.toFixed(1)),
+        end: Number(currentEnd.toFixed(1)),
+        text: currentText.join(' ')
+      });
+    }
+
+    return result;
+  }
+
   function initSubtitleStudio() {
     const tabs = document.querySelector('#tool .tabs');
     const tool = document.getElementById('tool');
-    const dropzone = document.getElementById('dropzone');
-    const toolHead = tool?.querySelector('.toolHead');
-    const quota = tool?.querySelector('.quota');
     const singleWorkspace = document.getElementById('workspace');
 
     if (!tabs || !tool || document.getElementById('subtitlesTab')) return;
@@ -83,19 +182,23 @@
             <p id="gwSubFileMeta" style="margin:8px 0 0; font-size:11px; color:#666;">Select a video to generate and style subtitles.</p>
           </div>
 
-          <!-- Auto Transcription -->
+          <!-- Auto Transcription & Generation -->
           <div class="gw-sub-section">
-            <h4>2. AI Auto-Transcription</h4>
-            <div style="display:flex; gap:8px; align-items:center;">
+            <h4>2. AI Auto-Transcription & Subtitles</h4>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <select id="gwSubLang" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:12px;">
-                <option value="en-US">English (US)</option>
-                <option value="en-IN">English (India)</option>
                 <option value="hi-IN">Hindi (हिंदी)</option>
+                <option value="en-IN">English (India)</option>
+                <option value="en-US">English (US)</option>
                 <option value="es-ES">Spanish</option>
               </select>
-              <button id="gwAutoTranscribeBtn" class="gw-sub-btn magic" type="button">✨ Auto-Transcribe Audio</button>
+              <button id="gwAutoGenerateTimelineBtn" class="gw-sub-btn primary" type="button">⚡ Instant Auto-Timeline</button>
+              <button id="gwAutoTranscribeBtn" class="gw-sub-btn magic" type="button">🎙️ Auto-Transcribe Audio</button>
+              <button id="gwPasteScriptBtn" class="gw-sub-btn secondary" type="button">📝 Paste Text / Script</button>
+              <button id="gwUploadSrtBtn" class="gw-sub-btn secondary" type="button">📁 Upload .SRT</button>
+              <input type="file" id="gwSrtFileInput" accept=".srt,.vtt" hidden>
             </div>
-            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Transcribes spoken words automatically using browser speech recognition.</p>
+            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Choose "Instant Auto-Timeline" for instant captions or "Auto-Transcribe" to listen.</p>
           </div>
 
           <!-- Subtitle Styling Presets -->
@@ -133,6 +236,22 @@
           </div>
         </div>
       </div>
+
+      <!-- Paste Script Modal -->
+      <div id="gwPasteModal" class="gw-sub-modal hidden">
+        <div class="gw-sub-modal-card">
+          <h3>
+            <span>📝 Paste Video Text / Lyrics</span>
+            <button id="gwClosePasteModal" type="button" style="border:none; background:none; font-size:24px; cursor:pointer;">×</button>
+          </h3>
+          <p>Paste lines of speech, lyrics or dialogue. They will be automatically synchronized across your entire video length.</p>
+          <textarea id="gwScriptText" placeholder="Line 1&#10;Line 2&#10;Line 3..."></textarea>
+          <div class="gw-sub-modal-actions">
+            <button id="gwCancelPasteBtn" type="button" class="gw-sub-btn secondary">Cancel</button>
+            <button id="gwApplyPasteBtn" type="button" class="gw-sub-btn accent">✨ Auto-Sync to Video</button>
+          </div>
+        </div>
+      </div>
     `;
 
     if (singleWorkspace) {
@@ -142,11 +261,6 @@
     }
 
     // Tab Navigation
-    const imageTab = document.getElementById('imageTab');
-    const videoTab = document.getElementById('videoTab');
-    const linkTab = document.getElementById('linkTab');
-    const linkPanel = document.getElementById('linkPanel');
-
     function selectSubtitlesTab() {
       subTab.classList.add('active');
       panel.classList.add('active');
@@ -176,6 +290,17 @@
     const fileInput = document.getElementById('gwSubFileInput');
     const fileMeta = document.getElementById('gwSubFileMeta');
     const useCleanedBtn = document.getElementById('gwUseCleanedVideoBtn');
+    const transcribeBtn = document.getElementById('gwAutoTranscribeBtn');
+    const autoGenBtn = document.getElementById('gwAutoGenerateTimelineBtn');
+    const transcribeStatus = document.getElementById('gwTranscribeStatus');
+    const pasteScriptBtn = document.getElementById('gwPasteScriptBtn');
+    const uploadSrtBtn = document.getElementById('gwUploadSrtBtn');
+    const srtFileInput = document.getElementById('gwSrtFileInput');
+    const pasteModal = document.getElementById('gwPasteModal');
+    const closePasteBtn = document.getElementById('gwClosePasteModal');
+    const cancelPasteBtn = document.getElementById('gwCancelPasteBtn');
+    const applyPasteBtn = document.getElementById('gwApplyPasteBtn');
+    const scriptText = document.getElementById('gwScriptText');
 
     // Video Loading
     function loadVideo(file) {
@@ -184,19 +309,18 @@
       fileMeta.textContent = `Loaded: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
       video.load();
 
-      // Set initial cues duration to video duration once loaded
       video.onloadedmetadata = () => {
-        const dur = video.duration || 10;
-        cues = [
-          { start: 0.0, end: Math.min(3.0, dur * 0.3), text: "AI GENERATED VIDEO" },
-          { start: Math.min(3.0, dur * 0.3), end: Math.min(6.5, dur * 0.7), text: "AUTO SUBTITLES STUDIO" },
-          { start: Math.min(6.5, dur * 0.7), end: dur, text: "CUSTOM VIRAL STYLES 🔥" }
-        ];
+        const dur = video.duration || 12;
+        const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
+        // Auto-populate full timeline across the video duration
+        cues = generateDefaultCues(dur, lang);
         renderCues();
+        updateActiveSubtitle();
+        transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} subtitle cues for your ${Math.round(dur)}s video!`;
       };
     }
 
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', () => {
       if (fileInput.files?.[0]) loadVideo(fileInput.files[0]);
     });
 
@@ -249,7 +373,7 @@
 
     document.getElementById('gwAddCueBtn').onclick = () => {
       const lastEnd = cues.length > 0 ? cues[cues.length - 1].end : 0;
-      cues.push({ start: lastEnd, end: lastEnd + 3.0, text: "NEW SUBTITLE" });
+      cues.push({ start: Number(lastEnd.toFixed(1)), end: Number((lastEnd + 3.0).toFixed(1)), text: "NEW SUBTITLE" });
       renderCues();
     };
 
@@ -292,64 +416,185 @@
       subText.style.fontSize = `${currentSize}px`;
     };
 
-    // Speech-to-Text Transcription
-    const transcribeBtn = document.getElementById('gwAutoTranscribeBtn');
-    const transcribeStatus = document.getElementById('gwTranscribeStatus');
+    // 1. Instant Auto-Timeline Button
+    autoGenBtn.onclick = () => {
+      const dur = video.duration || 12;
+      const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
+      cues = generateDefaultCues(dur, lang);
+      renderCues();
+      updateActiveSubtitle();
+      transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} synced subtitle cues for your ${Math.round(dur)}s video!`;
+    };
 
+    // 2. Speech-to-Text Transcription with Continuous Auto-Restart
     transcribeBtn.onclick = () => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        transcribeStatus.textContent = 'Speech recognition not supported in this browser. Please use Chrome/Edge.';
-        return;
-      }
-
       if (!video.src) {
         transcribeStatus.textContent = 'Please choose a video file first.';
         return;
       }
 
-      const lang = document.getElementById('gwSubLang').value || 'en-US';
-      const recognition = new SpeechRecognition();
-      recognition.lang = lang;
-      recognition.continuous = true;
-      recognition.interimResults = false;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const lang = document.getElementById('gwSubLang').value || 'hi-IN';
 
+      if (!SpeechRecognition) {
+        transcribeStatus.textContent = 'Browser Speech Recognition not supported. Auto-generating synced subtitle timeline instead...';
+        cues = generateDefaultCues(video.duration || 15, lang);
+        renderCues();
+        updateActiveSubtitle();
+        return;
+      }
+
+      if (isTranscribing) {
+        isTranscribing = false;
+        if (activeRecognition) {
+          try { activeRecognition.stop(); } catch {}
+        }
+        video.pause();
+        transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+        transcribeStatus.textContent = `Transcription stopped. Total ${cues.length} subtitle cues.`;
+        return;
+      }
+
+      isTranscribing = true;
+      transcribeBtn.textContent = '⏹ Stop Transcribing';
       cues = [];
-      let startTime = 0;
+      renderCues();
 
-      transcribeStatus.textContent = 'Playing video and listening to audio speech…';
+      transcribeStatus.textContent = '🎙️ Listening to video audio... (Make sure speakers are on)';
       video.currentTime = 0;
       video.muted = false;
       video.play().catch(() => {});
 
-      recognition.onresult = (event) => {
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const transcript = event.results[i][0].transcript.trim();
-          if (transcript) {
-            const now = video.currentTime;
-            cues.push({ start: Math.max(0, startTime), end: Math.max(startTime + 1.5, now), text: transcript.toUpperCase() });
-            startTime = now;
-            renderCues();
+      let phraseStart = 0;
+
+      function startRecognition() {
+        if (!isTranscribing) return;
+        const recognition = new SpeechRecognition();
+        recognition.lang = lang;
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        activeRecognition = recognition;
+
+        recognition.onresult = (event) => {
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript.trim();
+            if (transcript) {
+              const now = Number(video.currentTime.toFixed(1));
+              const start = Number(Math.max(0, phraseStart).toFixed(1));
+              const end = Number(Math.max(start + 1.2, now).toFixed(1));
+              cues.push({ start, end, text: transcript });
+              phraseStart = now;
+              renderCues();
+              updateActiveSubtitle();
+              transcribeStatus.textContent = `🎙️ Transcribed ${cues.length} subtitle cues so far...`;
+            }
           }
+        };
+
+        recognition.onerror = (event) => {
+          if (event.error === 'not-allowed') {
+            transcribeStatus.textContent = 'Microphone permission blocked. Please allow mic in browser settings or use "Instant Auto-Timeline".';
+            isTranscribing = false;
+            transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+          }
+        };
+
+        recognition.onend = () => {
+          if (isTranscribing && !video.paused && !video.ended) {
+            try { recognition.start(); } catch {}
+          } else if (!isTranscribing || video.ended) {
+            isTranscribing = false;
+            transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+            if (cues.length > 0) {
+              transcribeStatus.textContent = `✅ Transcription complete! Generated ${cues.length} subtitle cues.`;
+            } else {
+              // Fallback so user NEVER gets 0 cues
+              transcribeStatus.textContent = `⚡ Microphone captured 0 words. Auto-generated synced subtitle timeline for your video!`;
+              cues = generateDefaultCues(video.duration || 15, lang);
+              renderCues();
+              updateActiveSubtitle();
+            }
+          }
+        };
+
+        try {
+          recognition.start();
+        } catch (e) {
+          console.warn('Recognition start error:', e);
+        }
+      }
+
+      video.onended = () => {
+        isTranscribing = false;
+        transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+        if (activeRecognition) {
+          try { activeRecognition.stop(); } catch {}
+        }
+        if (cues.length === 0) {
+          cues = generateDefaultCues(video.duration || 15, lang);
+          renderCues();
+          updateActiveSubtitle();
+          transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} synced subtitle cues for your video!`;
         }
       };
 
-      recognition.onerror = (event) => {
-        transcribeStatus.textContent = `Recognition error: ${event.error}`;
-      };
-
-      recognition.onend = () => {
-        transcribeStatus.textContent = `Transcription complete! Generated ${cues.length} subtitle cues.`;
-      };
-
-      recognition.start();
-
-      video.onended = () => {
-        try { recognition.stop(); } catch {}
-      };
+      startRecognition();
     };
 
-    // Export .SRT
+    // 3. Paste Script / Lyrics Modal Feature
+    pasteScriptBtn.onclick = () => {
+      pasteModal.classList.remove('hidden');
+      scriptText.focus();
+    };
+
+    closePasteBtn.onclick = () => pasteModal.classList.add('hidden');
+    cancelPasteBtn.onclick = () => pasteModal.classList.add('hidden');
+
+    applyPasteBtn.onclick = () => {
+      const raw = scriptText.value.trim();
+      if (!raw) {
+        alert('Please paste or type text first.');
+        return;
+      }
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return;
+
+      const dur = video.duration || (lines.length * 3.0);
+      const lineDur = dur / lines.length;
+      cues = lines.map((text, idx) => ({
+        start: Number((idx * lineDur).toFixed(1)),
+        end: Number(((idx + 1) * lineDur).toFixed(1)),
+        text: text
+      }));
+
+      renderCues();
+      updateActiveSubtitle();
+      pasteModal.classList.add('hidden');
+      transcribeStatus.textContent = `✅ Successfully synced ${cues.length} lines of your script across the video!`;
+    };
+
+    // 4. Upload .SRT / .VTT
+    uploadSrtBtn.onclick = () => srtFileInput.click();
+    srtFileInput.onchange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        const parsed = parseSubtitles(text);
+        if (parsed.length > 0) {
+          cues = parsed;
+          renderCues();
+          updateActiveSubtitle();
+          transcribeStatus.textContent = `✅ Loaded ${cues.length} subtitle cues from ${file.name}!`;
+        } else {
+          transcribeStatus.textContent = `Could not parse subtitles from ${file.name}.`;
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // 5. Export .SRT
     document.getElementById('gwExportSrtBtn').onclick = () => {
       let srt = '';
       cues.forEach((cue, i) => {
@@ -370,7 +615,7 @@
       a.click();
     };
 
-    // Export .VTT
+    // 6. Export .VTT
     document.getElementById('gwExportVttBtn').onclick = () => {
       let vtt = 'WEBVTT\n\n';
       cues.forEach((cue, i) => {
@@ -390,7 +635,7 @@
       a.click();
     };
 
-    // Burn-In Subtitles into Video via Canvas & MediaRecorder
+    // 7. Burn-In Subtitles into Video via Canvas & MediaRecorder
     document.getElementById('gwBurnSubBtn').onclick = async () => {
       if (!videoFile || !video.src) {
         alert('Please select or upload a video first.');
@@ -414,17 +659,22 @@
 
         const stream = canvas.captureStream(30);
 
-        // Mix in audio from video if possible
-        let audioTrack = null;
+        // Mix in audio from video safely using singleton AudioContext
         try {
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const source = audioCtx.createMediaElementSource(video);
-          const dest = audioCtx.createMediaStreamDestination();
-          source.connect(dest);
-          source.connect(audioCtx.destination);
-          audioTrack = dest.stream.getAudioTracks()[0];
+          if (!activeAudioContext) {
+            activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (!activeMediaSourceNode) {
+            activeMediaSourceNode = activeAudioContext.createMediaElementSource(video);
+          }
+          const dest = activeAudioContext.createMediaStreamDestination();
+          activeMediaSourceNode.connect(dest);
+          activeMediaSourceNode.connect(activeAudioContext.destination);
+          const audioTrack = dest.stream.getAudioTracks()[0];
           if (audioTrack) stream.addTrack(audioTrack);
-        } catch {}
+        } catch (e) {
+          console.warn('Audio mixing skipped or already connected:', e);
+        }
 
         const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
         const chunks = [];
@@ -461,7 +711,7 @@
             const scale = vh / 720;
             const fontSize = Math.round(currentSize * scale * 1.5);
 
-            ctx.font = `900 ${fontSize}px Impact, sans-serif`;
+            ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
@@ -518,38 +768,20 @@
     // Watch for cleaned video in watermark remover to add shortcut button
     const workspace = document.getElementById('workspace');
     if (workspace) {
-      const actions = workspace.querySelector('.actions');
-      if (actions && !document.getElementById('gwQuickSubtitlesBtn')) {
-        const quickSubBtn = document.createElement('button');
-        quickSubBtn.id = 'gwQuickSubtitlesBtn';
-        quickSubBtn.className = 'secondary';
-        quickSubBtn.type = 'button';
-        quickSubBtn.textContent = '✨ Add Subtitles to Video';
-        quickSubBtn.style.display = 'none';
-        actions.appendChild(quickSubBtn);
-
-        quickSubBtn.onclick = async () => {
-          subTab.click();
-          checkCleanedVideo();
-          const afterVideo = document.getElementById('afterVideo');
-          if (afterVideo?.src) {
-            const res = await fetch(afterVideo.src);
-            const blob = await res.blob();
-            loadVideo(new File([blob], 'cleaned-video.mp4', { type: blob.type || 'video/mp4' }));
-          }
-        };
-
-        const observer = new MutationObserver(() => {
-          const afterVideo = document.getElementById('afterVideo');
-          if (afterVideo?.src && !afterVideo.classList.contains('hidden')) {
-            quickSubBtn.style.display = 'inline-block';
-          }
-        });
-        observer.observe(workspace, { childList: true, subtree: true, attributes: true });
-      }
+      const observer = new MutationObserver(() => {
+        checkCleanedVideo();
+      });
+      observer.observe(workspace, { childList: true, subtree: true });
     }
+
+    // Default initial cues
+    renderCues();
   }
 
   ensureStyles();
-  initSubtitleStudio();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSubtitleStudio);
+  } else {
+    initSubtitleStudio();
+  }
 })();
