@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v14';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v15';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -12,17 +12,71 @@
   // State
   let videoFile = null;
   let cues = [
-    { start: 0.0, end: 3.0, text: "AI GENERATED VIDEO" },
-    { start: 3.0, end: 6.0, text: "CLEANED AND CAPTIONED" },
-    { start: 6.0, end: 9.0, text: "READY FOR SOCIAL MEDIA 🔥" }
+    {
+      start: 0.0,
+      end: 1.5,
+      text: "AI GENERATED VIDEO",
+      words: [
+        { word: "AI", start: 0.0, end: 0.5 },
+        { word: "GENERATED", start: 0.5, end: 1.0 },
+        { word: "VIDEO", start: 1.0, end: 1.5 }
+      ]
+    },
+    {
+      start: 1.5,
+      end: 3.0,
+      text: "CLEANED AND CAPTIONED",
+      words: [
+        { word: "CLEANED", start: 1.5, end: 2.0 },
+        { word: "AND", start: 2.0, end: 2.5 },
+        { word: "CAPTIONED", start: 2.5, end: 3.0 }
+      ]
+    },
+    {
+      start: 3.0,
+      end: 4.8,
+      text: "READY FOR SOCIAL MEDIA 🔥",
+      words: [
+        { word: "READY", start: 3.0, end: 3.6 },
+        { word: "FOR", start: 3.6, end: 4.2 },
+        { word: "SOCIAL", start: 4.2, end: 4.5 },
+        { word: "MEDIA 🔥", start: 4.5, end: 4.8 }
+      ]
+    }
   ];
   let currentStyle = 'viral';
+  let currentAnim = 'bounce';
+  let isKaraokeActive = true;
   let currentPos = 'bottom';
   let currentSize = 24;
   let activeAudioContext = null;
   let activeMediaSourceNode = null;
   let isTranscribing = false;
   let activeRecognition = null;
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getCueWords(cue) {
+    if (Array.isArray(cue.words) && cue.words.length > 0) {
+      return cue.words;
+    }
+    const rawWords = (cue.text || '').trim().split(/\s+/).filter(Boolean);
+    if (rawWords.length === 0) return [];
+    const dur = Math.max(0.2, cue.end - cue.start);
+    const wordDur = dur / rawWords.length;
+    return rawWords.map((w, idx) => ({
+      word: w,
+      start: Number((cue.start + (idx * wordDur)).toFixed(2)),
+      end: Number((cue.start + ((idx + 1) * wordDur)).toFixed(2))
+    }));
+  }
 
   function formatTime(secs) {
     const m = Math.floor(secs / 60);
@@ -67,7 +121,15 @@
       const start = Number((i * step).toFixed(1));
       const end = Number(Math.min(dur, (i + 1) * step).toFixed(1));
       const text = templates[i % templates.length];
-      newCues.push({ start, end, text });
+      const rawWords = text.split(/\s+/).filter(Boolean);
+      const cueDur = Math.max(0.2, end - start);
+      const wDur = cueDur / rawWords.length;
+      const words = rawWords.map((w, wi) => ({
+        word: w,
+        start: Number((start + wi * wDur).toFixed(2)),
+        end: Number((start + (wi + 1) * wDur).toFixed(2))
+      }));
+      newCues.push({ start, end, text, words });
     }
     return newCues;
   }
@@ -386,8 +448,25 @@
             <div class="gw-preset-buttons">
               <button type="button" class="gw-preset-btn active" data-style="viral">⚡ Viral Reel</button>
               <button type="button" class="gw-preset-btn" data-style="hormozi">🔥 Hormozi</button>
-              <button type="button" class="gw-preset-btn" data-style="minimal">✦ Minimal</button>
               <button type="button" class="gw-preset-btn" data-style="neon">🌟 Neon</button>
+              <button type="button" class="gw-preset-btn" data-style="gradient">🌈 Gradient</button>
+              <button type="button" class="gw-preset-btn" data-style="minimal">✦ Minimal</button>
+            </div>
+
+            <!-- Animation Presets & Karaoke Word Highlight -->
+            <div style="margin-top:14px; border-top:1px solid #e7e8e2; padding-top:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:800; color:#111;">Animation Effect:</span>
+                <label style="font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                  <input type="checkbox" id="gwKaraokeToggle" checked style="accent-color:#10b981; cursor:pointer;"> 🎤 Word Karaoke
+                </label>
+              </div>
+              <div class="gw-anim-buttons">
+                <button type="button" class="gw-anim-btn active" data-anim="bounce">💥 CapCut Bounce</button>
+                <button type="button" class="gw-anim-btn" data-anim="slide">🌊 Slide Up</button>
+                <button type="button" class="gw-anim-btn" data-anim="glow">🌟 Neon Glow</button>
+                <button type="button" class="gw-anim-btn" data-anim="hormozi">⚡ Hormozi Jump</button>
+              </div>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
@@ -585,7 +664,7 @@
     };
 
     // Frame-Accurate Synced Subtitle Playback (60 FPS loop)
-    let lastActiveText = '';
+    let lastActiveCue = null;
     let animLoopId = null;
 
     function updateActiveSubtitle() {
@@ -601,16 +680,54 @@
       }
 
       if (active && active.text.trim()) {
-        if (lastActiveText !== active.text) {
-          lastActiveText = active.text;
-          subText.textContent = active.text;
-          subText.classList.remove('gw-cue-pop');
-          void subText.offsetWidth; // trigger reflow
-          subText.classList.add('gw-cue-pop');
-        }
         subText.style.display = 'inline-block';
+
+        // When cue changes, re-render and trigger entrance animation
+        if (lastActiveCue !== active) {
+          lastActiveCue = active;
+          subText.className = `gw-sub-text gw-style-${currentStyle}`;
+          if (currentAnim) {
+            void subText.offsetWidth; // force DOM reflow to restart animation keyframe cleanly
+            subText.classList.add(`gw-anim-${currentAnim}`);
+          }
+
+          if (isKaraokeActive) {
+            const words = getCueWords(active);
+            subText.innerHTML = words.map(w =>
+              `<span class="gw-word future-word" data-start="${w.start}" data-end="${w.end}">${escapeHtml(w.word)}</span>`
+            ).join(' ');
+          } else {
+            subText.textContent = active.text;
+          }
+        }
+
+        // Active word karaoke timing check
+        if (isKaraokeActive) {
+          const spans = subText.querySelectorAll('.gw-word');
+          const totalWords = spans.length;
+          spans.forEach((span, idx) => {
+            const wStart = parseFloat(span.getAttribute('data-start'));
+            const wEnd = parseFloat(span.getAttribute('data-end'));
+            const isLastWord = (idx === totalWords - 1);
+            const isCurrent = t >= wStart && (isLastWord ? t <= wEnd : t < wEnd);
+
+            if (isCurrent) {
+              if (!span.classList.contains('active-word')) {
+                span.className = 'gw-word active-word';
+              }
+            } else if (t >= wEnd) {
+              if (!span.classList.contains('past-word')) {
+                span.className = 'gw-word past-word';
+              }
+            } else {
+              if (!span.classList.contains('future-word')) {
+                span.className = 'gw-word future-word';
+              }
+            }
+          });
+        }
       } else {
-        lastActiveText = '';
+        lastActiveCue = null;
         subText.textContent = '';
         subText.style.display = 'none';
       }
@@ -664,9 +781,31 @@
         document.querySelectorAll('.gw-preset-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentStyle = btn.dataset.style;
-        subText.className = `gw-sub-text gw-style-${currentStyle}`;
+        lastActiveCue = null;
+        updateActiveSubtitle();
       };
     });
+
+    // Animation Presets
+    document.querySelectorAll('.gw-anim-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.gw-anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentAnim = btn.dataset.anim;
+        lastActiveCue = null;
+        updateActiveSubtitle();
+      };
+    });
+
+    // Word Karaoke Toggle
+    const karaokeToggle = document.getElementById('gwKaraokeToggle');
+    if (karaokeToggle) {
+      karaokeToggle.onchange = (e) => {
+        isKaraokeActive = !!e.target.checked;
+        lastActiveCue = null;
+        updateActiveSubtitle();
+      };
+    }
 
     // Position Buttons
     document.querySelectorAll('.gw-pos-btn').forEach(btn => {
@@ -922,11 +1061,18 @@
 
       const dur = video.duration || (phrases.length * 1.5);
       const phraseDur = dur / phrases.length;
-      cues = phrases.map((text, idx) => ({
-        start: Number((idx * phraseDur).toFixed(1)),
-        end: Number(((idx + 1) * phraseDur).toFixed(1)),
-        text: text
-      }));
+      cues = phrases.map((text, idx) => {
+        const start = Number((idx * phraseDur).toFixed(1));
+        const end = Number(((idx + 1) * phraseDur).toFixed(1));
+        const rawWords = text.split(/\s+/).filter(Boolean);
+        const wDur = (end - start) / Math.max(1, rawWords.length);
+        const words = rawWords.map((w, wi) => ({
+          word: w,
+          start: Number((start + wi * wDur).toFixed(2)),
+          end: Number((start + (wi + 1) * wDur).toFixed(2))
+        }));
+        return { start, end, text, words };
+      });
 
       renderCues();
       updateActiveSubtitle();
@@ -1072,42 +1218,121 @@
             const scale = vh / 720;
             const fontSize = Math.round(currentSize * scale * 1.5);
 
-            ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-
             let y = vh * 0.88;
             if (currentPos === 'middle') y = vh * 0.5;
             else if (currentPos === 'top') y = vh * 0.15;
 
             const x = vw / 2;
 
-            if (currentStyle === 'hormozi') {
-              const metrics = ctx.measureText(text);
-              const padX = fontSize * 0.4;
-              const padY = fontSize * 0.25;
-              ctx.fillStyle = '#ffe600';
-              ctx.fillRect(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2);
-              ctx.fillStyle = '#000000';
-              ctx.fillText(text, x, y);
-            } else if (currentStyle === 'minimal') {
-              const metrics = ctx.measureText(text);
-              const padX = fontSize * 0.5;
-              const padY = fontSize * 0.3;
-              ctx.fillStyle = 'rgba(17,19,24,0.85)';
-              ctx.beginPath();
-              ctx.roundRect?.(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2, 999);
-              ctx.fill();
-              ctx.fillStyle = '#ffffff';
-              ctx.font = `600 ${fontSize * 0.9}px -apple-system, sans-serif`;
-              ctx.fillText(text, x, y);
+            if (isKaraokeActive) {
+              const words = getCueWords(active);
+              ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+
+              const spaceWidth = ctx.measureText(' ').width;
+              let totalWidth = 0;
+              const wordMetrics = words.map(w => {
+                const m = ctx.measureText(w.word);
+                totalWidth += m.width;
+                return { width: m.width };
+              });
+              totalWidth += spaceWidth * Math.max(0, words.length - 1);
+
+              if (currentStyle === 'hormozi') {
+                const padX = fontSize * 0.4;
+                const padY = fontSize * 0.25;
+                ctx.fillStyle = '#ffe600';
+                ctx.fillRect(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2);
+              } else if (currentStyle === 'minimal') {
+                const padX = fontSize * 0.5;
+                const padY = fontSize * 0.3;
+                ctx.fillStyle = 'rgba(17,19,24,0.85)';
+                ctx.beginPath();
+                ctx.roundRect?.(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2, 999);
+                ctx.fill();
+              }
+
+              let curX = x - totalWidth / 2;
+              for (let i = 0; i < words.length; i++) {
+                const w = words[i];
+                const wm = wordMetrics[i];
+                const isLastWord = (i === words.length - 1);
+                const isCurrent = t >= w.start && (isLastWord ? t <= w.end : t < w.end);
+                const wCenterX = curX + wm.width / 2;
+
+                if (currentStyle === 'hormozi') {
+                  if (isCurrent) {
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(curX - 4, y - fontSize / 2 - 2, wm.width + 8, fontSize + 4);
+                    ctx.fillStyle = '#ffe600';
+                    ctx.fillText(w.word, wCenterX, y);
+                  } else {
+                    ctx.fillStyle = '#000000';
+                    ctx.fillText(w.word, wCenterX, y);
+                  }
+                } else if (currentStyle === 'minimal') {
+                  ctx.fillStyle = isCurrent ? '#38bdf8' : '#ffffff';
+                  ctx.font = `600 ${fontSize * (isCurrent ? 1.05 : 0.9)}px -apple-system, sans-serif`;
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'neon') {
+                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.strokeStyle = '#000000';
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? '#ff007f' : '#00f2fe';
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'gradient') {
+                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.strokeStyle = '#000000';
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? '#ffe600' : '#a855f7';
+                  ctx.fillText(w.word, wCenterX, y);
+                } else {
+                  // Viral Reel
+                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.strokeStyle = '#000000';
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? '#00f2fe' : '#ffeb3b';
+                  ctx.fillText(w.word, wCenterX, y);
+                }
+
+                curX += wm.width + spaceWidth;
+              }
             } else {
-              // Viral Reel
-              ctx.lineWidth = Math.max(3, fontSize * 0.15);
-              ctx.strokeStyle = '#000000';
-              ctx.strokeText(text, x, y);
-              ctx.fillStyle = currentStyle === 'neon' ? '#00f2fe' : '#ffeb3b';
-              ctx.fillText(text, x, y);
+              // Static subtitle rendering
+              ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+
+              if (currentStyle === 'hormozi') {
+                const metrics = ctx.measureText(text);
+                const padX = fontSize * 0.4;
+                const padY = fontSize * 0.25;
+                ctx.fillStyle = '#ffe600';
+                ctx.fillRect(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2);
+                ctx.fillStyle = '#000000';
+                ctx.fillText(text, x, y);
+              } else if (currentStyle === 'minimal') {
+                const metrics = ctx.measureText(text);
+                const padX = fontSize * 0.5;
+                const padY = fontSize * 0.3;
+                ctx.fillStyle = 'rgba(17,19,24,0.85)';
+                ctx.beginPath();
+                ctx.roundRect?.(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2, 999);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `600 ${fontSize * 0.9}px -apple-system, sans-serif`;
+                ctx.fillText(text, x, y);
+              } else {
+                ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                ctx.strokeStyle = '#000000';
+                ctx.strokeText(text, x, y);
+                ctx.fillStyle = currentStyle === 'neon' ? '#00f2fe' : (currentStyle === 'gradient' ? '#a855f7' : '#ffeb3b');
+                ctx.fillText(text, x, y);
+              }
             }
             ctx.restore();
           }

@@ -67,7 +67,12 @@ module.exports = async function handler(req, res) {
               cues.push({
                 start: Number(chunkStart.toFixed(1)),
                 end: Number(item.end.toFixed(1)),
-                text: currentChunk.map(c => c.word).join(' ').trim()
+                text: currentChunk.map(c => c.word).join(' ').trim(),
+                words: currentChunk.map(c => ({
+                  word: c.word,
+                  start: Number(c.start.toFixed(2)),
+                  end: Number(c.end.toFixed(2))
+                }))
               });
               currentChunk = [];
               chunkStart = null;
@@ -78,7 +83,12 @@ module.exports = async function handler(req, res) {
             cues.push({
               start: Number(chunkStart.toFixed(1)),
               end: Number(currentChunk[currentChunk.length - 1].end.toFixed(1)),
-              text: currentChunk.map(c => c.word).join(' ').trim()
+              text: currentChunk.map(c => c.word).join(' ').trim(),
+              words: currentChunk.map(c => ({
+                word: c.word,
+                start: Number(c.start.toFixed(2)),
+                end: Number(c.end.toFixed(2))
+              }))
             });
           }
 
@@ -106,7 +116,12 @@ module.exports = async function handler(req, res) {
             cues.push({
               start: Number(cStart.toFixed(1)),
               end: Number(cEnd.toFixed(1)),
-              text: chunk.join(' ')
+              text: chunk.join(' '),
+              words: chunk.map((w, idx) => ({
+                word: w,
+                start: Number((cStart + idx * timePerWord).toFixed(2)),
+                end: Number((cStart + (idx + 1) * timePerWord).toFixed(2))
+              }))
             });
           }
         }
@@ -122,10 +137,18 @@ module.exports = async function handler(req, res) {
         for (let i = 0; i < words.length; i += maxWords) {
           const chunk = words.slice(i, i + maxWords);
           const idx = Math.floor(i / maxWords);
+          const cStart = Number((idx * step).toFixed(1));
+          const cEnd = Number(((idx + 1) * step).toFixed(1));
+          const wStep = step / chunk.length;
           cues.push({
-            start: Number((idx * step).toFixed(1)),
-            end: Number(((idx + 1) * step).toFixed(1)),
-            text: chunk.join(' ')
+            start: cStart,
+            end: cEnd,
+            text: chunk.join(' '),
+            words: chunk.map((w, wi) => ({
+              word: w,
+              start: Number((cStart + wi * wStep).toFixed(2)),
+              end: Number((cStart + (wi + 1) * wStep).toFixed(2))
+            }))
           });
         }
         return cues;
