@@ -148,26 +148,25 @@
     const linkPanel = document.getElementById('linkPanel');
 
     function selectSubtitlesTab() {
-      imageTab?.classList.remove('active');
-      videoTab?.classList.remove('active');
-      linkTab?.classList.remove('active');
       subTab.classList.add('active');
-
-      if (dropzone) dropzone.style.display = 'none';
-      if (toolHead) toolHead.style.display = 'none';
-      if (quota) quota.style.display = 'none';
-      if (linkPanel) linkPanel.classList.remove('active');
       panel.classList.add('active');
+      panel.style.display = 'block';
     }
 
-    subTab.addEventListener('click', selectSubtitlesTab);
+    function hideSubtitlesTab() {
+      subTab.classList.remove('active');
+      panel.classList.remove('active');
+      panel.style.display = 'none';
+      try {
+        const vid = document.getElementById('gwSubVideo');
+        if (vid) vid.pause();
+      } catch {}
+    }
 
-    [imageTab, videoTab, linkTab].forEach((t) => {
-      t?.addEventListener('click', () => {
-        subTab.classList.remove('active');
-        panel.classList.remove('active');
-      });
-    });
+    window.__GW_SHOW_SUBTITLES__ = selectSubtitlesTab;
+    window.__GW_HIDE_SUBTITLES__ = hideSubtitlesTab;
+
+    subTab.addEventListener('click', selectSubtitlesTab);
 
     // Elements
     const video = document.getElementById('gwSubVideo');

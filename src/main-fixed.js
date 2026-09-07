@@ -15,7 +15,7 @@ app.innerHTML = `
     <section id="tool" class="tool">
       <div class="tabs">
         <button id="imageTab" class="active">Image <b>Free</b></button>
-        <button id="videoTab">Video <b id="videoBadge">21 Free</b></button>
+        <button id="videoTab">Video <b id="videoBadge">Free</b></button>
       </div>
       <div class="quota"><strong id="quotaTitle">Unlimited images</strong><span id="quotaText">Free image cleanup</span><em id="quotaPrice">₹0</em></div>
       <div class="toolHead">
@@ -63,7 +63,7 @@ const FREE_VIDEO_LIMIT = 21;
 const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
 const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
 const TOKEN_KEY = 'gw_video_plan_token_v1';
-const state = { mode: 'image', file: null, result: null, engine: null, paid: false, detected: null, videoSize: null };
+const state = { mode: 'image', file: null, result: null, engine: null, paid: true, detected: null, videoSize: null };
 const urls = new Set();
 const engineUrls = [
   'https://esm.sh/@pictx/gemini-veo-watermark-remover@0.2.4/browser?bundle',
@@ -78,8 +78,8 @@ function freeVideoCount() {
   if (localStorage.getItem(LEGACY_TRIAL_KEY) === '1') { localStorage.setItem(TRIAL_COUNT_KEY, '1'); return 1; }
   return 0;
 }
-function freeVideosLeft() { return Math.max(0, FREE_VIDEO_LIMIT - freeVideoCount()); }
-function canVideo() { return state.paid || freeVideosLeft() > 0; }
+function freeVideosLeft() { return 999; }
+function canVideo() { return true; }
 function setMessage(text, type = '') { $('message').textContent = text; $('message').className = `message ${type}`; }
 function openModal() { $('payModal').classList.remove('hidden'); document.body.classList.add('locked'); }
 function closeModal() { $('payModal').classList.add('hidden'); document.body.classList.remove('locked'); }
@@ -119,12 +119,11 @@ async function restorePlan() {
 }
 
 function updateVideoUi() {
-  const left = freeVideosLeft();
-  $('videoBadge').textContent = state.paid ? 'Unlocked' : (left > 0 ? `${left} Free` : '₹99');
+  $('videoBadge').textContent = 'Free';
   if (state.mode !== 'video') return;
-  $('quotaTitle').textContent = state.paid ? 'Video unlocked' : (left > 0 ? `${left} free video${left === 1 ? '' : 's'} left` : '21 free videos used');
-  $('quotaText').textContent = state.paid ? 'Your ₹99 video plan is active' : (left > 0 ? `${freeVideoCount()} of 21 used` : 'Upgrade required before video 22');
-  $('quotaPrice').textContent = state.paid ? 'Active' : (left > 0 ? '₹0' : '₹99');
+  $('quotaTitle').textContent = '100% Free Access';
+  $('quotaText').textContent = 'Free video & image cleanup';
+  $('quotaPrice').textContent = '₹0';
 }
 
 function clearWorkspace() {

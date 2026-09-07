@@ -121,29 +121,23 @@ if (!tabs || document.getElementById('upscaleTab')) {
   const showUpscale = () => {
     upscaleActive = true;
     upscaleTab.classList.add('active');
-    imageTab?.classList.remove('active');
-    videoTab?.classList.remove('active');
-    regularNodes.forEach((node) => {
-      visibilityMemory.set(node, node.classList.contains('hidden'));
-      node.classList.add('hidden');
-    });
     panel.classList.remove('hidden');
+    panel.style.display = 'block';
   };
 
   const hideUpscale = () => {
-    if (!upscaleActive) return;
     upscaleActive = false;
     upscaleTab.classList.remove('active');
     panel.classList.add('hidden');
-    regularNodes.forEach((node) => {
-      if (visibilityMemory.get(node) === false) node.classList.remove('hidden');
-    });
-    visibilityMemory.clear();
+    panel.style.display = 'none';
+    try { $('upscaleBefore')?.pause?.(); } catch {}
+    try { $('upscaleAfter')?.pause?.(); } catch {}
   };
 
+  window.__GW_SHOW_UPSCALE__ = showUpscale;
+  window.__GW_HIDE_UPSCALE__ = hideUpscale;
+
   upscaleTab.addEventListener('click', showUpscale);
-  imageTab?.addEventListener('click', hideUpscale, { capture: true });
-  videoTab?.addEventListener('click', hideUpscale, { capture: true });
 
   const revoke = () => {
     if (sourceUrl) URL.revokeObjectURL(sourceUrl);

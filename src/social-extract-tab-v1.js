@@ -152,27 +152,21 @@
     const quota = tool.querySelector('.quota');
 
     function selectLinkTab() {
-      imageTab?.classList.remove('active');
-      videoTab?.classList.remove('active');
       linkTab.classList.add('active');
-
-      if (dropzone) dropzone.style.display = 'none';
-      if (toolHead) toolHead.style.display = 'none';
-      if (quota) quota.style.display = 'none';
       linkPanel.classList.add('active');
+      linkPanel.style.display = 'block';
     }
 
-    linkTab.addEventListener('click', selectLinkTab);
+    function hideLinkTab() {
+      linkTab.classList.remove('active');
+      linkPanel.classList.remove('active');
+      linkPanel.style.display = 'none';
+    }
 
-    [imageTab, videoTab].forEach((t) => {
-      t?.addEventListener('click', () => {
-        linkTab.classList.remove('active');
-        linkPanel.classList.remove('active');
-        if (dropzone) dropzone.style.display = '';
-        if (toolHead) toolHead.style.display = '';
-        if (quota) quota.style.display = '';
-      });
-    });
+    window.__GW_SHOW_LINK__ = selectLinkTab;
+    window.__GW_HIDE_LINK__ = hideLinkTab;
+
+    linkTab.addEventListener('click', selectLinkTab);
 
     const urlInput = document.getElementById('gwSocialUrlInput');
     const fetchBtn = document.getElementById('gwFetchLinkBtn');

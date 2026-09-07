@@ -6,11 +6,11 @@ const UNLIMITED_ACCESS_EMAIL = 'hyydikshant@gmail.com';
 const DEFAULT_PLAN = {
   country: 'IN',
   region: 'india',
-  amount: 99,
+  amount: 0,
   currency: 'INR',
-  displayPrice: '₹99',
-  durationDays: 30,
-  requiresIndianPhone: true,
+  displayPrice: 'Free',
+  durationDays: 3650,
+  requiresIndianPhone: false,
   requiresEmail: false,
 };
 let funnelPlan = { ...DEFAULT_PLAN };

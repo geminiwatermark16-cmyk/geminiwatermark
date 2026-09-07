@@ -93,6 +93,7 @@ const modules = [
   './social-extract-tab-v1.js?v=20260907-1',
   './batch-image-cleaner-v1.js?v=20260907-1',
   './subtitle-studio-v1.js?v=20260907-1',
+  './tab-coordinator-v1.js?v=20260907-1',
 ];
 
 Promise.allSettled(modules.map((url) => import(url))).then((results) => {

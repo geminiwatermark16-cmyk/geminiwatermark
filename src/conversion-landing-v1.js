@@ -3,15 +3,7 @@
   const ROOT_ID = 'gwConversionPanel';
   let paywallWasOpen = false;
 
-  const currentPrice = () => {
-    const featured = document.querySelector('#pricing article.featured .price b')?.textContent?.trim();
-    if (featured) return featured;
-    const modal = document.querySelector('#payModal .payPrice b')?.textContent?.trim();
-    if (modal) return modal;
-    const badge = document.querySelector('.hero .badge')?.textContent || '';
-    const match = badge.match(/(?:₹|\$|€|£)\s?\d+(?:[.,]\d+)?/);
-    return match?.[0]?.replace(/\s+/g, '') || '₹99';
-  };
+  const currentPrice = () => 'Free';
 
   const track = (name, extra = {}) => {
     try {
@@ -286,7 +278,7 @@
     const cta = document.createElement('div');
     cta.id = 'gwMobileCta';
     cta.className = 'gwMobileCta';
-    cta.innerHTML = `<div><b>Upload video before paying</b><small><span data-gw-price>₹99</span> · 30 days · no auto-renewal</small></div><button type="button">Choose video</button>`;
+    cta.innerHTML = `<div><b>100% Free Video Remover</b><small>Unlimited processing · no payment required</small></div><button type="button">Choose video</button>`;
     document.body.appendChild(cta);
 
     cta.querySelector('button')?.addEventListener('click', () => {

@@ -259,6 +259,8 @@
       if (dropzone) dropzone.style.display = '';
     }
 
+    window.__GW_HIDE_BATCH__ = hideBatchWorkspace;
+
     document.getElementById('gwBatchClear')?.addEventListener('click', hideBatchWorkspace);
 
     // Intercept file selection when multiple files are chosen

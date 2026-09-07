@@ -62,27 +62,12 @@ videoPriorityStyle.textContent = `
   #videoTab.gw-video-priority{
     position:relative;
     font-weight:800;
-    box-shadow:0 0 0 2px rgba(17,17,17,.12),0 10px 28px rgba(0,0,0,.12);
   }
   #videoTab.gw-video-priority::after{
-    content:'MOST POPULAR';
-    position:absolute;
-    top:-9px;
-    right:10px;
-    padding:3px 7px;
-    border-radius:999px;
-    background:#111;
-    color:#fff;
-    font-size:9px;
-    line-height:1;
-    letter-spacing:.08em;
-    font-weight:900;
+    display: none !important;
   }
   #videoTab.gw-video-priority.active{
     transform:translateY(-1px);
-  }
-  @media (max-width:640px){
-    #videoTab.gw-video-priority::after{right:7px;font-size:8px}
   }
 `;
 document.head.appendChild(videoPriorityStyle);
@@ -93,11 +78,11 @@ const UNLIMITED_ACCESS_EMAIL = 'hyydikshant@gmail.com';
 const DEFAULT_PLAN_PRICE = {
   country: 'IN',
   region: 'india',
-  amount: 99,
+  amount: 0,
   currency: 'INR',
-  displayPrice: '₹99',
-  durationDays: 30,
-  requiresIndianPhone: true,
+  displayPrice: 'Free',
+  durationDays: 3650,
+  requiresIndianPhone: false,
   requiresEmail: false,
 };
 let planPrice = { ...DEFAULT_PLAN_PRICE };
@@ -111,10 +96,7 @@ function setHtml(element, html) {
 }
 
 function currentVideoAccess() {
-  const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
-  const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
-  const paid = badge === 'Unlocked' || quota === 'Active';
-  return { paid };
+  return { paid: true };
 }
 
 function patchCheckoutIdentityUi() {
@@ -145,73 +127,32 @@ function patchCheckoutIdentityUi() {
 }
 
 function patchPaidAndRegionalCopy() {
-  const price = planPrice.displayPrice;
-  const { paid } = currentVideoAccess();
-
-  setHtml(document.querySelector('.hero .badge'), `<i></i> Images free · Video ${price} / 30 days`);
+  setHtml(document.querySelector('.hero .badge'), `<i></i> 100% FREE · Unlimited Videos & Images`);
   setText(
     document.querySelector('.hero .lead'),
-    `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Image cleanup is free. Video processing is a paid feature and requires the ${price} plan, active for 30 days after successful payment.`
+    `Remove supported visible Gemini watermarks from images and Veo videos in your browser. 100% free with no limits, no login, and no subscription.`
   );
 
-  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>PAID</b><span>Video processing</span>');
-  setHtml(document.querySelector('.metrics article:nth-child(4)'), `<b>${price}</b><span>30-day video plan</span>`);
+  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>100%</b><span>Free for all</span>');
+  setHtml(document.querySelector('.metrics article:nth-child(4)'), `<b>₹0</b><span>Free Forever</span>`);
 
-  setText(document.querySelector('#pricing h2'), `Images free. Video ${price} for 30 days.`);
+  setText(document.querySelector('#pricing h2'), `100% Free Forever.`);
   setText(
     document.querySelector('#pricing .sectionLead'),
-    `Supported image cleanup stays free. Video upload and processing require the ${price} plan, valid for 30 days from successful payment with no automatic renewal.`
+    `Both image and video processing are completely free with no payment, no subscriptions, and no credits. Clean unlimited images and videos directly in your browser.`
   );
 
-  const featured = document.querySelector('#pricing article.featured');
-  if (featured) {
-    setText(featured.querySelector(':scope > span'), 'VIDEO PLAN');
-    const priceValue = featured.querySelector('.price b');
-    if (priceValue) setText(priceValue, price);
-    const priceEm = featured.querySelector('.price em');
-    if (priceEm) setText(priceEm, 'for 30 days');
-
-    const items = featured.querySelectorAll('li');
-    if (items[0]) setText(items[0], 'Paid video processing from the first video');
-    if (items[1]) setText(items[1], '720p + 1080p portrait and landscape support');
-    if (items[2]) setText(items[2], 'New Gemini diamond + old Veo mode');
-
-    const buyBtn = document.getElementById('buyPlan');
-    if (buyBtn) {
-      buyBtn.style.display = paid ? 'none' : '';
-      setText(buyBtn, `Unlock video for ${price}`);
-    }
-  }
-
-  const modal = document.getElementById('payModal');
-  const modalCard = modal?.querySelector('.modalCard');
-  if (modalCard) {
-    setText(modalCard.querySelector('h2'), 'Unlock video');
-    setText(modalCard.querySelector(':scope > p'), `Video processing is paid. Continue with the ${price} video plan for 30 days.`);
-    const payPriceValue = modalCard.querySelector('.payPrice b');
-    if (payPriceValue) setText(payPriceValue, price);
-    const priceText = modalCard.querySelector('.payPrice span');
-    if (priceText) setText(priceText, '30 days · no auto-renewal');
-    const payBtn = document.getElementById('payBtn');
-    if (payBtn && !payBtn.disabled) setText(payBtn, `Pay ${price} with Cashfree`);
-  }
-
-  const accountUpgrade = document.getElementById('accountUpgrade');
-  if (accountUpgrade) setText(accountUpgrade, `Buy / renew ${price} plan`);
+  const buyBtn = document.getElementById('buyPlan');
+  if (buyBtn) buyBtn.style.display = 'none';
 
   const videoBadge = document.getElementById('videoBadge');
-  if (videoBadge && !paid) setText(videoBadge, price);
+  if (videoBadge) setText(videoBadge, 'Free');
 
-  const videoMode = document.getElementById('videoTab')?.classList.contains('active');
-  if (videoMode && !paid) {
-    setText(document.getElementById('quotaTitle'), `Video plan · ${price}`);
-    setText(document.getElementById('quotaText'), 'Paid video processing · 30-day access');
-    setText(document.getElementById('quotaPrice'), price);
-    setText(document.getElementById('toolTitle'), 'Unlock video processing');
-    setText(document.getElementById('toolSub'), `${price} gives supported video processing for 30 days`);
-    setText(document.getElementById('dropStrong'), `Pay ${price} to process video`);
-    setText(document.getElementById('dropMeta'), 'Video is a paid feature · payment required before upload');
-  }
+  setText(document.getElementById('quotaTitle'), '100% Free Access');
+  setText(document.getElementById('quotaText'), 'Free video & image cleanup');
+  setText(document.getElementById('quotaPrice'), '₹0');
+  setText(document.getElementById('dropStrong'), 'Drop video here');
+  setText(document.getElementById('dropMeta'), '100% Free · local browser processing');
 
   patchCheckoutIdentityUi();
 }

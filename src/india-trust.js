@@ -15,9 +15,9 @@
         <b>Simple pricing. Familiar checkout. Real support.</b>
       </div>
       <div class="gwIndiaGrid">
-        <div><strong>₹99</strong><small>30-day video plan</small></div>
-        <div><strong>INR</strong><small>Clear India pricing</small></div>
-        <div><strong>Cashfree</strong><small>Payment checkout</small></div>
+        <div><strong>100% Free</strong><small>Unlimited video & image</small></div>
+        <div><strong>₹0</strong><small>Zero cost forever</small></div>
+        <div><strong>Local</strong><small>Browser processing</small></div>
         <div><strong>Hindi + English</strong><small>Support available</small></div>
       </div>
       <div class="gwIndiaBadges" aria-label="India service highlights">
@@ -75,123 +75,33 @@
     return match ? Math.max(0, Number(match[1]) || 0) : 0;
   };
 
-  const isPaid = () => {
-    const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
-    const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
-    return badge === 'Unlocked' || quota === 'Active';
-  };
+  const isPaid = () => true;
 
-  const currentPrice = () =>
-    document.querySelector('#payModal .payPrice b')?.textContent?.trim() ||
-    document.querySelector('#pricing article.featured .price b')?.textContent?.trim() ||
-    '₹99';
+  const currentPrice = () => 'Free';
 
-  const openCheckout = () => {
-    const modal = document.getElementById('payModal');
-    if (!modal) return;
-
-    const price = currentPrice();
-    const left = freeVideosLeft();
-    const copy = modal.querySelector('.modalCard > p');
-    const payButton = document.getElementById('payBtn');
-
-    const modalCopy = left > 0
-      ? `You still have ${left} free video${left === 1 ? '' : 's'} left. Continue free, or buy the ${price} video plan now for 30 days.`
-      : `Your free video allowance is used. Continue with the ${price} video plan for 30 days.`;
-
-    setTextIfChanged(copy, modalCopy);
-    if (payButton && !payButton.disabled) setTextIfChanged(payButton, `Pay ${price} with Cashfree`);
-
-    modal.classList.remove('hidden');
-    document.body.classList.add('locked');
-    setTimeout(() => {
-      const preferred = document.getElementById('phone') || document.getElementById('email');
-      preferred?.focus?.();
-    }, 50);
-  };
+  const openCheckout = () => {};
 
   const ensureStyle = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .gwVideoPayEntry{border:0;border-radius:999px;padding:9px 13px;background:#111;color:#fff;font:inherit;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.12)}
-      .gwVideoPayEntry:hover{transform:translateY(-1px)}
-      .quota .gwVideoPayEntry{margin-left:auto}
-      .gwUpscaleHero .gwVideoPayEntry{margin-left:auto;align-self:flex-start}
-      @media(max-width:700px){.quota .gwVideoPayEntry{width:100%;margin:8px 0 0}.gwUpscaleHero .gwVideoPayEntry{width:100%;margin:12px 0 0}}
+      .gwVideoPayEntry{display:none!important}
     `;
     document.head.appendChild(style);
   };
 
-  const wireButton = (button) => {
-    if (!button || button.dataset.gwCheckoutWired === '1') return;
-    button.dataset.gwCheckoutWired = '1';
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openCheckout();
-    });
-  };
+  const wireButton = () => {};
 
   const ensureEntryPoints = () => {
-    const modal = document.getElementById('payModal');
-    const videoTab = document.getElementById('videoTab');
-    if (!modal || !videoTab) return false;
-
-    ensureStyle();
-    const paid = isPaid();
-    const price = currentPrice();
-
     const buyPlan = document.getElementById('buyPlan');
-    if (buyPlan) {
-      setDisplayIfChanged(buyPlan, paid ? 'none' : '');
-      if (!paid) setTextIfChanged(buyPlan, `Buy ${price} plan now`);
-      wireButton(buyPlan);
-    }
+    if (buyPlan) buyPlan.style.display = 'none';
 
-    const accountUpgrade = document.getElementById('accountUpgrade');
-    if (accountUpgrade && accountUpgrade.dataset.gwCheckoutWired !== '1') {
-      accountUpgrade.dataset.gwCheckoutWired = '1';
-      accountUpgrade.addEventListener('click', (event) => {
-        event.preventDefault();
-        document.getElementById('accountModal')?.classList.add('hidden');
-        document.body.classList.remove('locked');
-        openCheckout();
-      });
-    }
+    const videoPay = document.getElementById('gwVideoUpgradeInline');
+    if (videoPay) videoPay.style.display = 'none';
 
-    const quota = document.querySelector('#tool > .quota');
-    let videoPay = document.getElementById('gwVideoUpgradeInline');
-    if (quota && !videoPay) {
-      videoPay = document.createElement('button');
-      videoPay.id = 'gwVideoUpgradeInline';
-      videoPay.type = 'button';
-      videoPay.className = 'gwVideoPayEntry';
-      quota.appendChild(videoPay);
-      wireButton(videoPay);
-    }
-    if (videoPay) {
-      setTextIfChanged(videoPay, `Buy ${price} plan`);
-      const videoActive = videoTab.classList.contains('active');
-      setDisplayIfChanged(videoPay, !paid && videoActive ? '' : 'none');
-    }
-
-    const enhanceHero = document.querySelector('#upscalePanel .gwUpscaleHero');
-    let enhancePay = document.getElementById('gwEnhanceUpgradeInline');
-    if (enhanceHero && !enhancePay) {
-      enhancePay = document.createElement('button');
-      enhancePay.id = 'gwEnhanceUpgradeInline';
-      enhancePay.type = 'button';
-      enhancePay.className = 'gwVideoPayEntry';
-      enhanceHero.appendChild(enhancePay);
-      wireButton(enhancePay);
-    }
-    if (enhancePay) {
-      setTextIfChanged(enhancePay, `Buy ${price} plan`);
-      const enhanceActive = document.getElementById('upscaleTab')?.classList.contains('active');
-      setDisplayIfChanged(enhancePay, !paid && enhanceActive ? '' : 'none');
-    }
+    const enhancePay = document.getElementById('gwEnhanceUpgradeInline');
+    if (enhancePay) enhancePay.style.display = 'none';
 
     return true;
   };

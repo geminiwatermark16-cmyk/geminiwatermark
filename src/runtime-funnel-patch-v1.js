@@ -39,6 +39,10 @@ function transformMainSource(original) {
   source = source.replace('₹99 plan required', 'Drop video here');
   source = source.replace('Your 21 free videos have been used', '100% Free Video Processing');
   source = source.replace('Unlock more video processing', 'Drop a story / reel video');
+  source = source.replace(
+    "$('videoBadge').textContent = state.paid ? 'Unlocked' : (left > 0 ? `${left} Free` : '₹99');",
+    "$('videoBadge').textContent = 'Free';"
+  );
 
   return source;
 }
