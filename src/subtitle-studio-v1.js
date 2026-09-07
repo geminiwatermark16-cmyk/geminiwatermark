@@ -256,9 +256,6 @@
   async function extractAudioWav(file, maxSeconds = 90) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioCtx();
-    if (audioCtx.state === 'suspended') {
-      try { await audioCtx.resume(); } catch {}
-    }
 
     // 1. In-memory Web Audio decodeAudioData (fastest PCM WAV)
     try {

@@ -92,7 +92,7 @@ const modules = [
   '/src/before-after-slider-v1.js?v=20260907-v3',
   '/src/social-extract-tab-v1.js?v=20260907-v3',
   '/src/batch-image-cleaner-v1.js?v=20260907-v3',
-  '/src/subtitle-studio-v1.js?v=20260908-v12',
+  '/src/subtitle-studio-v1.js?v=20260908-v13',
   '/src/tab-coordinator-v1.js?v=20260907-v3',
 ];
 
