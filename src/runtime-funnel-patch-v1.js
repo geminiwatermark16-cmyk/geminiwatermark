@@ -62,7 +62,7 @@ window.fetch = async (input, init) => {
 };
 
 try {
-  await import('./runtime-loader.js?v=20260818-13');
+  await import('./runtime-loader.js?v=20260907-v3');
 } finally {
   window.fetch = nativeFetch;
 }

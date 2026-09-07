@@ -4,7 +4,7 @@ await Promise.all([
   import('./video-clean-landscape-v1.js?v=20260819-1')
 ]);
 
-const mainUrl = new URL('./main-fixed.js?v=20260818-10', import.meta.url);
+const mainUrl = new URL('./main-fixed.js?v=20260907-v3', import.meta.url);
 const response = await fetch(mainUrl, { cache: 'no-store' });
 if (!response.ok) throw new Error(`Could not load the watermark remover application (${response.status}).`);
 let source = await response.text();

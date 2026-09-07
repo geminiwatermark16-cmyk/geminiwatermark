@@ -79,21 +79,21 @@ if (coreReady) {
 }
 
 const modules = [
-  './background-remover-v1.js?v=20260818-1',
-  './video-upscale-v1.js?v=20260818-2',
-  './video-upscale-mp4-v2.js?v=20260818-2',
-  './video-enhance-gpu-v2.js?v=20260818-1',
-  './video-paid-gate.js?v=20260819-1',
-  './conversion-landing-v1.js?v=20260822-1',
-  './social-proof-v1.js?v=20260823-1',
-  './logo-motion-entry.js?v=20260823-1',
-  './trust-enhancements.js?v=20260818-2',
-  './india-trust.js?v=20260819-3',
-  './before-after-slider-v1.js?v=20260907-1',
-  './social-extract-tab-v1.js?v=20260907-1',
-  './batch-image-cleaner-v1.js?v=20260907-1',
-  './subtitle-studio-v1.js?v=20260907-1',
-  './tab-coordinator-v1.js?v=20260907-1',
+  './background-remover-v1.js?v=20260907-v3',
+  './video-upscale-v1.js?v=20260907-v3',
+  './video-upscale-mp4-v2.js?v=20260907-v3',
+  './video-enhance-gpu-v2.js?v=20260907-v3',
+  './video-paid-gate.js?v=20260907-v3',
+  './conversion-landing-v1.js?v=20260907-v3',
+  './social-proof-v1.js?v=20260907-v3',
+  './logo-motion-entry.js?v=20260907-v3',
+  './trust-enhancements.js?v=20260907-v3',
+  './india-trust.js?v=20260907-v3',
+  './before-after-slider-v1.js?v=20260907-v3',
+  './social-extract-tab-v1.js?v=20260907-v3',
+  './batch-image-cleaner-v1.js?v=20260907-v3',
+  './subtitle-studio-v1.js?v=20260907-v3',
+  './tab-coordinator-v1.js?v=20260907-v3',
 ];
 
 Promise.allSettled(modules.map((url) => import(url))).then((results) => {

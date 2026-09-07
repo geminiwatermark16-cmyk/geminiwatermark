@@ -127,8 +127,8 @@ try {
 
 // Patch the core runtime before the existing v11 bootstrap runs. v11 imports
 // the exact same runtime URL, so the ESM cache prevents a duplicate boot.
-await import('./runtime-funnel-patch-v1.js?v=20260820-1');
-await import('./app-bootstrap-v11.js?v=20260819-1');
+await import('./runtime-funnel-patch-v1.js?v=20260907-v3');
+await import('./app-bootstrap-v11.js?v=20260907-v3');
 
 async function postJson(url, body) {
   const response = await fetch(url, {

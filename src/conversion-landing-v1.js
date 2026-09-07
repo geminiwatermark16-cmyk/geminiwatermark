@@ -144,6 +144,7 @@
       event.preventDefault();
       document.getElementById('videoTab')?.click();
       document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => document.getElementById('fileInput')?.click(), 100);
       track('landing_upload_video_click', { source: 'hero' });
     });
     document.getElementById('gwHeroPricing')?.addEventListener('click', () => {
@@ -287,6 +288,7 @@
     cta.querySelector('button')?.addEventListener('click', () => {
       document.getElementById('videoTab')?.click();
       document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => document.getElementById('fileInput')?.click(), 100);
       track('landing_upload_video_click', { source: 'mobile_sticky' });
     });
 

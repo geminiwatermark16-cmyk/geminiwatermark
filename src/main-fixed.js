@@ -248,6 +248,7 @@ async function processCurrent() {
   $('processingTitle').textContent = state.mode === 'image' ? 'Detecting & removing watermark…' : (state.paid ? 'Processing video…' : `Processing free video ${Math.min(FREE_VIDEO_LIMIT, freeVideoCount() + 1)} of ${FREE_VIDEO_LIMIT}…`);
   try {
     const engine = await loadEngine();
+    if (!state.file) return;
     if (state.mode === 'image') await processImage(engine); else await processVideo(engine);
     $('downloadBtn').disabled = !state.result;
   } catch (error) {
