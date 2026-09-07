@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
       entitlementToken,
       account: {
         plan: planLabelFromPayment(order.order_amount, order.order_currency),
-        durationDays: PLAN_DURATION_DAYS,
+        durationDays: entitlement.durationDays || PLAN_DURATION_DAYS,
         paidAt: new Date(entitlement.paidAt).toISOString(),
         expiresAt: new Date(entitlement.expiresAt).toISOString(),
         phone: maskPhone(entitlement.phone),

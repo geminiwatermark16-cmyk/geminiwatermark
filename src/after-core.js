@@ -89,6 +89,10 @@ const modules = [
   './logo-motion-entry.js?v=20260823-1',
   './trust-enhancements.js?v=20260818-2',
   './india-trust.js?v=20260819-3',
+  './before-after-slider-v1.js?v=20260907-1',
+  './social-extract-tab-v1.js?v=20260907-1',
+  './batch-image-cleaner-v1.js?v=20260907-1',
+  './multi-tier-checkout-v1.js?v=20260907-1',
 ];
 
 Promise.allSettled(modules.map((url) => import(url))).then((results) => {

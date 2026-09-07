@@ -31,6 +31,12 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Enter a valid email address for international checkout.' });
     }
 
+    const isSingleTier = req.body?.planTier === 'single' && plan.region === 'india';
+    const orderAmount = isSingleTier ? 29 : plan.amount;
+    const displayPrice = isSingleTier ? '₹29' : plan.displayPrice;
+    const durationDays = isSingleTier ? 1 : PLAN_DURATION_DAYS;
+    const planTag = isSingleTier ? 'video_29_single' : 'video_99_30d';
+
     const orderId = `gw_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
     const identity = plan.region === 'india' ? phone : email.toLowerCase();
     const customerId = `gwc_${crypto.createHash('sha256').update(`${identity}:${orderId}`).digest('hex').slice(0, 20)}`;
@@ -38,7 +44,7 @@ module.exports = async function handler(req, res) {
 
     const body = {
       order_id: orderId,
-      order_amount: plan.amount,
+      order_amount: orderAmount,
       order_currency: plan.currency,
       customer_details: {
         customer_id: customerId,
@@ -48,10 +54,10 @@ module.exports = async function handler(req, res) {
       order_meta: {
         return_url: `${siteUrl(req)}/?cf_order_id=${encodeURIComponent(orderId)}`,
       },
-      order_note: `geminiwatermark.space ${plan.displayPrice} video access for ${PLAN_DURATION_DAYS} days`,
+      order_note: `geminiwatermark.space ${displayPrice} video access for ${durationDays} days`,
       order_tags: {
-        plan: 'video_99_30d',
-        duration_days: String(PLAN_DURATION_DAYS),
+        plan: planTag,
+        duration_days: String(durationDays),
         pricing_region: plan.region,
         pricing_country: plan.country,
         customer_phone_dummy: plan.region === 'international' ? '1' : '0',
@@ -74,12 +80,12 @@ module.exports = async function handler(req, res) {
       orderId: order.order_id,
       paymentSessionId: order.payment_session_id,
       mode: actualEnvironment === 'sandbox' ? 'sandbox' : 'production',
-      amount: plan.amount,
+      amount: orderAmount,
       currency: plan.currency,
-      displayPrice: plan.displayPrice,
+      displayPrice,
       country: plan.country,
       region: plan.region,
-      durationDays: PLAN_DURATION_DAYS,
+      durationDays,
     });
   } catch (error) {
     return sendError(res, error);

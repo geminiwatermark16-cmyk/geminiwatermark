@@ -295,7 +295,8 @@ async function runCheckout(button) {
   if (msg) msg.textContent = 'Preparing secure checkout…';
 
   try {
-    const order = await postJson('/api/create-order', { phone, email });
+    const planTier = window.__GW_SELECTED_PLAN_TIER__ || 'monthly';
+    const order = await postJson('/api/create-order', { phone, email, planTier });
     trackInitiateCheckout(order);
 
     const Cashfree = await waitForCashfree();
