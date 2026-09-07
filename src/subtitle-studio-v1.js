@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v4';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v5';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -938,14 +938,34 @@
       observer.observe(workspace, { childList: true, subtree: true });
     }
 
+    // Auto-open if navigated with #subtitlesTab hash
+    if (window.location.hash.includes('subtitlesTab')) {
+      setTimeout(() => {
+        selectSubtitlesTab();
+        tool.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+
     // Default initial cues
     renderCues();
   }
 
   ensureStyles();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSubtitleStudio);
-  } else {
-    initSubtitleStudio();
+
+  async function startSubtitleStudio() {
+    if (document.getElementById('subtitlesTab')) return;
+    const started = Date.now();
+    while (Date.now() - started < 15000) {
+      if (document.querySelector('#tool .tabs') && document.getElementById('tool')) {
+        initSubtitleStudio();
+        return;
+      }
+      await new Promise(r => setTimeout(r, 50));
+    }
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startSubtitleStudio);
+  }
+  startSubtitleStudio();
 })();
