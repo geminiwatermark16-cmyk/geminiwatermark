@@ -161,9 +161,7 @@ function selectedVideoReady() {
 }
 
 function isPaid() {
-  const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
-  const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
-  return badge === 'Unlocked' || quota === 'Active';
+  return true;
 }
 
 function currentToolMode() {
@@ -178,31 +176,26 @@ function setText(selectorOrElement, text) {
 }
 
 function patchUploadFirstCopy() {
-  const price = funnelPlan.displayPrice || '₹99';
-  const paid = isPaid();
-  const videoMode = document.getElementById('videoTab')?.classList.contains('active');
+  setText('.hero .badge', '✦ 100% FREE · UNLIMITED VIDEOS & IMAGES');
+  setText('.hero .lead', 'Remove supported visible Gemini watermarks from images and videos in your browser. 100% free with no limits, no login, and no subscription.');
+  setText('#pricing .sectionLead', 'Both image and video watermark removal are completely free to use directly in your browser with zero limits.');
 
-  setText('.hero .lead', `Remove supported visible Gemini watermarks from images and Veo videos in your browser. Image cleanup is free. For video, select your file first and complete the ${price} 30-day plan only before processing.`);
-  setText('#pricing .sectionLead', `Supported image cleanup stays free. For video, you can select and preview your file first; processing and download require the ${price} plan for 30 days, with no automatic renewal.`);
-
-  const modalCard = document.querySelector('#payModal .modalCard');
-  if (modalCard) {
-    setText(modalCard.querySelector(':scope > p'), selectedVideoReady()
-      ? `Your video is loaded and ready. Pay ${price} to process it and unlock video access for 30 days.`
-      : `Video processing is paid. Continue with the ${price} video plan for 30 days.`);
-    setText(modalCard.querySelector('.payPrice b'), price);
-    setText(modalCard.querySelector('.payPrice span'), '30 days · no auto-renewal');
-  }
-
-  if (videoMode && !paid) {
-    setText(document.getElementById('quotaTitle'), `Video plan · ${price}`);
-    setText(document.getElementById('quotaText'), 'Select first · pay only before processing');
-    setText(document.getElementById('quotaPrice'), price);
-    setText(document.getElementById('toolTitle'), 'Upload your video first');
-    setText(document.getElementById('toolSub'), 'We will read the video locally before checkout · MP4/WebM/MOV');
-    setText(document.getElementById('dropStrong'), 'Drop video here');
-    setText(document.getElementById('dropMeta'), `Select your video first · ${price} payment is required only before processing`);
-  }
+  const videoBadge = document.getElementById('videoBadge');
+  if (videoBadge) videoBadge.textContent = 'Free';
+  const quotaTitle = document.getElementById('quotaTitle');
+  if (quotaTitle) quotaTitle.textContent = '100% Free Access';
+  const quotaText = document.getElementById('quotaText');
+  if (quotaText) quotaText.textContent = 'Free video & image cleanup';
+  const quotaPrice = document.getElementById('quotaPrice');
+  if (quotaPrice) quotaPrice.textContent = '₹0';
+  const toolTitle = document.getElementById('toolTitle');
+  if (toolTitle) toolTitle.textContent = 'Drop your video here';
+  const toolSub = document.getElementById('toolSub');
+  if (toolSub) toolSub.textContent = '1080p/720p portrait or landscape · MP4/WebM/MOV';
+  const dropStrong = document.getElementById('dropStrong');
+  if (dropStrong) dropStrong.textContent = 'Drop video here';
+  const dropMeta = document.getElementById('dropMeta');
+  if (dropMeta) dropMeta.textContent = '100% Free · local browser processing';
 }
 
 function validEmail(email) {

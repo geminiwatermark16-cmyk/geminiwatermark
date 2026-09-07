@@ -3,7 +3,17 @@ const nativeFetch = window.fetch.bind(window);
 function transformMainSource(original) {
   let source = original;
 
-  // Let unpaid visitors choose a video and see its metadata/support status first.
+  // Make state.paid true and canVideo always return true for 100% free access for all visitors
+  source = source.replace(
+    "const state = { mode: 'image', file: null, result: null, engine: null, paid: false };",
+    "const state = { mode: 'image', file: null, result: null, engine: null, paid: true };"
+  );
+  source = source.replace(
+    "function canVideo() { return state.paid || freeVideosLeft() > 0; }",
+    "function canVideo() { return true; }"
+  );
+
+  // Remove paywall modal checks entirely
   source = source.replace(
     "  if (state.mode === 'video' && !canVideo()) { openModal(); return; }\n  showFile(file);",
     "  showFile(file);"
@@ -12,33 +22,23 @@ function transformMainSource(original) {
     "$('dropzone').onclick = () => { if (state.mode === 'video' && !canVideo()) { openModal(); return; } $('fileInput').click(); };",
     "$('dropzone').onclick = () => $('fileInput').click();"
   );
-
-  // Keep the paywall before processing, but after the visitor has selected a file.
   source = source.replace(
     "  if (state.mode === 'video' && !canVideo()) { openModal(); return; }\n  $('processing').classList.remove('hidden');",
-    "  if (state.mode === 'video' && !canVideo()) {\n    $('resultMeta').textContent = 'Payment required';\n    setMessage('Video loaded successfully. Complete payment to process and download the cleaned result.');\n    openModal();\n    return;\n  }\n  $('processing').classList.remove('hidden');"
+    "  $('processing').classList.remove('hidden');"
   );
-
-  // Expose a safe hand-off so successful Cashfree verification can unlock the
-  // already-selected video without reloading the page (and losing the file).
   source = source.replace(
-    "function selectFile(file) {",
-    `window.__GW_COMPLETE_PAID_UNLOCK__ = async function () {
-  state.paid = true;
-  updateVideoUi();
-  closeModal();
-  if (state.mode === 'video' && state.file && !state.result) await processCurrent();
-};
-window.__GW_HAS_SELECTED_VIDEO__ = () => state.mode === 'video' && Boolean(state.file);
-
-function selectFile(file) {`
+    "  if (state.mode === 'video' && !canVideo()) { openModal(); return; }",
+    ""
   );
 
-  // Track successful redirect-based payment verification too.
+  // Update badges to Free
   source = source.replace(
-    "  localStorage.setItem(TOKEN_KEY, data.entitlementToken); state.paid = true; updateVideoUi();",
-    "  localStorage.setItem(TOKEN_KEY, data.entitlementToken); state.paid = true; updateVideoUi(); window.__GW_TRACK_PURCHASE__?.({ orderId: data.orderId || orderId, amount: data.amount, currency: data.currency });"
+    '<button id="videoTab">Video <b id="videoBadge">21 Free</b></button>',
+    '<button id="videoTab">Video <b id="videoBadge">Free</b></button>'
   );
+  source = source.replace('₹99 plan required', 'Drop video here');
+  source = source.replace('Your 21 free videos have been used', '100% Free Video Processing');
+  source = source.replace('Unlock more video processing', 'Drop a story / reel video');
 
   return source;
 }

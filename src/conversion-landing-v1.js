@@ -70,21 +70,21 @@
     if (!hero) return false;
 
     const badge = hero.querySelector('.badge');
-    if (badge) badge.innerHTML = `<i></i> VIDEO REMOVER · Upload first · ${price} / 30 days`;
+    if (badge) badge.innerHTML = `<i></i> 100% FREE · Unlimited Videos & Images`;
 
     const h1 = hero.querySelector('h1');
-    if (h1) h1.innerHTML = 'Google Flow / Veo video watermark.<br><span>Clean it in your browser.</span>';
+    if (h1) h1.innerHTML = 'Google Flow / Veo video watermark.<br><span>Clean it in your browser for free.</span>';
 
     const lead = hero.querySelector('.lead');
-    if (lead) lead.textContent = `Upload your Google Flow, Gemini or Veo video before paying. Your file is read locally first. Supported video processing is ${price} for 30 days with no automatic renewal. Image cleanup stays free.`;
+    if (lead) lead.textContent = `Upload your Google Flow, Gemini or Veo video. Your file is read locally first. 100% free with no limits, no login, and no subscription.`;
 
     const navBtn = document.querySelector('.navBtn');
     if (navBtn) navBtn.textContent = 'Upload video';
 
     const toolTitle = document.getElementById('toolTitle');
-    if (toolTitle) toolTitle.textContent = 'Upload your video first';
+    if (toolTitle) toolTitle.textContent = 'Drop your video here';
     const toolSub = document.getElementById('toolSub');
-    if (toolSub) toolSub.textContent = 'Select MP4, WebM or MOV first · payment is required only before processing';
+    if (toolSub) toolSub.textContent = 'Select MP4, WebM or MOV · 100% free browser processing';
     return true;
   };
 
@@ -108,24 +108,24 @@
     const panel = document.createElement('section');
     panel.id = ROOT_ID;
     panel.className = 'gwConversionPanel';
-    panel.setAttribute('aria-label', 'Video upload and 30-day access information');
+    panel.setAttribute('aria-label', 'Free video watermark remover information');
     panel.innerHTML = `
       <div class="gwConversionTop">
         <div>
-          <span class="gwConversionKicker">VIDEO-FIRST · UPLOAD BEFORE PAYMENT</span>
-          <h2>Upload the exact video you want cleaned. <span>Pay only when you are ready to process.</span></h2>
-          <p>Select your Google Flow, Gemini or Veo video first. Once your file is loaded, unlock supported video processing for <strong data-gw-price>₹99</strong> and keep video access active for 30 days.</p>
+          <span class="gwConversionKicker">100% FREE UTILITY · UNLIMITED PROCESSING</span>
+          <h2>Upload any video you want cleaned. <span>Instant free processing in your browser.</span></h2>
+          <p>Clean supported visible watermarks from Google Flow, Gemini and Veo videos directly on your device. Completely free forever with no payment, no account, and no hidden fees.</p>
         </div>
         <div class="gwConversionActions">
-          <a class="gwConversionPrimary" id="gwHeroUploadVideo" href="#tool">Choose video first</a>
-          <a class="gwConversionSecondary" id="gwHeroPricing" href="#pricing">What the 30-day pass includes</a>
+          <a class="gwConversionPrimary" id="gwHeroUploadVideo" href="#tool">Choose video (Free)</a>
+          <a class="gwConversionSecondary" id="gwHeroPricing" href="#how">How it works</a>
         </div>
       </div>
       <div class="gwConversionTrust">
-        <span>Upload before checkout</span>
-        <span>No automatic renewal</span>
+        <span>100% Free Forever</span>
+        <span>Unlimited Videos</span>
         <span>Media stays on your device</span>
-        <span>Cashfree secure payment</span>
+        <span>Zero Server Uploads</span>
       </div>
     `;
     lead.insertAdjacentElement('afterend', panel);
@@ -134,15 +134,15 @@
     steps.className = 'gwUploadSteps';
     steps.innerHTML = `
       <div><b>1</b><span><strong>Choose your video</strong><br>MP4, WebM or MOV</span></div>
-      <div><b>2</b><span><strong>Confirm it loads</strong><br>Your file is read locally</span></div>
-      <div><b>3</b><span><strong>Unlock processing</strong><br><span data-gw-price>₹99</span> · 30-day access</span></div>
+      <div><b>2</b><span><strong>Instant processing</strong><br>Runs locally in browser</span></div>
+      <div><b>3</b><span><strong>Download result</strong><br>Clean video · Free</span></div>
     `;
     panel.insertAdjacentElement('afterend', steps);
 
     const proof = document.createElement('div');
     proof.id = 'gwSelectedProof';
     proof.className = 'gwSelectedProof';
-    proof.innerHTML = '<div class="gwProofIcon">✓</div><div><strong>Video loaded successfully</strong><span>Your video is selected. Next step: unlock supported processing for <b data-gw-price>₹99</b>. No charge has been made yet.</span></div>';
+    proof.innerHTML = '<div class="gwProofIcon">✓</div><div><strong>Video loaded successfully</strong><span>Your video is ready to process. 100% free local cleanup.</span></div>';
     steps.insertAdjacentElement('afterend', proof);
 
     document.getElementById('gwHeroUploadVideo')?.addEventListener('click', (event) => {

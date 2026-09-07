@@ -92,7 +92,6 @@ const modules = [
   './before-after-slider-v1.js?v=20260907-1',
   './social-extract-tab-v1.js?v=20260907-1',
   './batch-image-cleaner-v1.js?v=20260907-1',
-  './multi-tier-checkout-v1.js?v=20260907-1',
   './subtitle-studio-v1.js?v=20260907-1',
 ];
 

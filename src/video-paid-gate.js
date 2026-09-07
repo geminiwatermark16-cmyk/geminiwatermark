@@ -2,54 +2,34 @@
 // the core runtime; this module applies the same entitlement to Video Enhance.
 (() => {
   const TOKEN_KEY = 'gw_video_plan_token_v1';
-  let paid = false;
+  let paid = true;
   let checking = false;
 
-  const uiSaysPaid = () => {
-    const badge = document.getElementById('videoBadge')?.textContent?.trim() || '';
-    const quota = document.getElementById('quotaPrice')?.textContent?.trim() || '';
-    return badge === 'Unlocked' || quota === 'Active';
-  };
+  const uiSaysPaid = () => true;
 
-  const currentPrice = () =>
-    document.querySelector('#payModal .payPrice b')?.textContent?.trim() ||
-    document.querySelector('#pricing article.featured .price b')?.textContent?.trim() ||
-    '₹99';
+  const currentPrice = () => 'Free';
 
-  const openCheckout = () => {
-    const modal = document.getElementById('payModal');
-    if (!modal) return;
-    const price = currentPrice();
-    const copy = modal.querySelector('.modalCard > p');
-    if (copy) copy.textContent = `Video processing is a paid feature. Continue with the ${price} plan for 30 days.`;
-    const payBtn = document.getElementById('payBtn');
-    if (payBtn && !payBtn.disabled) payBtn.textContent = `Pay ${price} with Cashfree`;
-    modal.classList.remove('hidden');
-    document.body.classList.add('locked');
-    setTimeout(() => (document.getElementById('phone') || document.getElementById('email'))?.focus?.(), 50);
-  };
+  const openCheckout = () => {};
 
   const applyUi = () => {
     const tab = document.getElementById('upscaleTab');
     if (tab) {
       const badge = tab.querySelector('b');
-      if (badge && badge.textContent !== (paid ? 'ACTIVE' : 'PAID')) badge.textContent = paid ? 'ACTIVE' : 'PAID';
+      if (badge && badge.textContent !== 'ACTIVE') badge.textContent = 'ACTIVE';
     }
 
     const panel = document.getElementById('upscalePanel');
-    if (panel) panel.dataset.paidVideo = paid ? '1' : '0';
+    if (panel) panel.dataset.paidVideo = '1';
 
     const start = document.getElementById('upscaleStart');
-    if (start && !paid) start.title = `${currentPrice()} video plan required`;
+    if (start) start.removeAttribute('title');
   };
 
   const refreshPaid = async () => {
-    if (checking) return paid;
-    if (uiSaysPaid()) {
-      paid = true;
-      applyUi();
-      return true;
-    }
+    paid = true;
+    applyUi();
+    return true;
+  };
 
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
