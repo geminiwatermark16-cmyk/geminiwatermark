@@ -4,7 +4,7 @@
   "version": "1.4.0",
   "description": "Gemini/Veo visible watermark remover with Cashfree payments, interactive slider & batch processing",
   "scripts": {
-    "check": "node --check src/main.js && node --check src/before-after-slider-v1.js && node --check src/social-extract-tab-v1.js && node --check src/batch-image-cleaner-v1.js && node --check src/multi-tier-checkout-v1.js && node --check api/create-order.js && node --check api/verify-order.js && node --check api/verify-entitlement.js && node --check api/plan-price.js && node --check api/social-extract.js && node --check api/admin-report.js && node --check api/chat.js && node --check api/admin-chat.js && node --check api/track.js && node --check api/admin-traffic.js && node --check lib/cashfree.js && node --check lib/store.js"
+    "check": "node --check src/main.js && node --check src/before-after-slider-v1.js && node --check src/social-extract-tab-v1.js && node --check src/batch-image-cleaner-v1.js && node --check src/multi-tier-checkout-v1.js && node --check src/subtitle-studio-v1.js && node --check api/create-order.js && node --check api/verify-order.js && node --check api/verify-entitlement.js && node --check api/plan-price.js && node --check api/social-extract.js && node --check api/admin-report.js && node --check api/chat.js && node --check api/admin-chat.js && node --check api/track.js && node --check api/admin-traffic.js && node --check lib/cashfree.js && node --check lib/store.js"
   },
   "dependencies": {
     "pg": "^8.16.3"
