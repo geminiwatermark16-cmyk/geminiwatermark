@@ -1,5 +1,6 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v6';
+  console.log('--- GW SUBTITLE STUDIO V7 BOOT ---');
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v7';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -199,6 +200,7 @@
     const tool = document.getElementById('tool');
     const singleWorkspace = document.getElementById('workspace');
 
+    console.log('--- initSubtitleStudio RUNNING ---', { hasTabs: !!tabs, hasTool: !!tool, hasSubTab: !!document.getElementById('subtitlesTab') });
     if (!tabs || !tool || document.getElementById('subtitlesTab')) return;
 
     // Add Tab
@@ -953,15 +955,18 @@
   ensureStyles();
 
   async function startSubtitleStudio() {
+    console.log('--- startSubtitleStudio CALLED ---');
     if (document.getElementById('subtitlesTab')) return;
     const started = Date.now();
     while (Date.now() - started < 15000) {
       if (document.querySelector('#tool .tabs') && document.getElementById('tool')) {
+        console.log('--- startSubtitleStudio FOUND #tool .tabs! Calling init... ---');
         initSubtitleStudio();
         return;
       }
       await new Promise(r => setTimeout(r, 50));
     }
+    console.warn('--- startSubtitleStudio TIMED OUT WAITING FOR #tool .tabs ---');
   }
 
   if (document.readyState === 'loading') {
