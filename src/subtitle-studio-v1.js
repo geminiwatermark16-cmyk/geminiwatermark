@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v8';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v9';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -164,21 +164,35 @@
   }
 
   async function extractAudioWav(file, maxSeconds = 90) {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const arrayBuffer = await file.arrayBuffer();
-    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    if (audioCtx.state === 'suspended') {
+      try { await audioCtx.resume(); } catch {}
+    }
 
-    const duration = Math.min(decoded.duration, maxSeconds);
-    const targetLength = Math.floor(duration * 16000);
-    const offlineCtx = new OfflineAudioContext(1, targetLength, 16000);
-    const source = offlineCtx.createBufferSource();
-    source.buffer = decoded;
-    source.connect(offlineCtx.destination);
-    source.start(0);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
 
-    const rendered = await offlineCtx.startRendering();
-    const samples = rendered.getChannelData(0);
-    return encodeWav(samples, 16000);
+      const duration = Math.min(decoded.duration, maxSeconds);
+      const targetLength = Math.floor(duration * 16000);
+      const offlineCtx = new OfflineAudioContext(1, targetLength, 16000);
+      const source = offlineCtx.createBufferSource();
+      source.buffer = decoded;
+      source.connect(offlineCtx.destination);
+      source.start(0);
+
+      const rendered = await offlineCtx.startRendering();
+      const samples = rendered.getChannelData(0);
+      return { blob: encodeWav(samples, 16000), format: 'wav' };
+    } catch (err) {
+      console.warn('decodeAudioData failed, checking direct media fallback:', err);
+      if (file.size <= 4.2 * 1024 * 1024) {
+        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+        return { blob: file, format: ext === 'mov' ? 'mp4' : ext };
+      }
+      throw new Error('Could not extract audio track from this video. You can use "Instant Auto-Timeline" or "Paste Text".');
+    }
   }
 
   function blobToBase64(blob) {
@@ -527,11 +541,11 @@
       transcribeStatus.textContent = '🎵 Extracting audio track directly from video file…';
 
       try {
-        const wavBlob = await extractAudioWav(videoFile);
+        const { blob: audioBlob, format: audioFormat } = await extractAudioWav(videoFile);
         whisperAiBtn.textContent = '🤖 Whisper AI Transcribing…';
-        transcribeStatus.textContent = `🤖 Sending audio to Whisper AI…`;
+        transcribeStatus.textContent = `🤖 Sending clean audio track to Whisper AI…`;
 
-        const audioBase64 = await blobToBase64(wavBlob);
+        const audioBase64 = await blobToBase64(audioBlob);
         const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
         const savedKey = localStorage.getItem('gw_whisper_api_key') || '';
 
@@ -544,7 +558,7 @@
           body: JSON.stringify({
             audioBase64,
             language: lang.split('-')[0],
-            format: 'wav'
+            format: audioFormat || 'wav'
           })
         });
 
