@@ -1,7 +1,13 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v16';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v17';
 
   function ensureStyles() {
+    if (!document.querySelector(`link[href*="Noto+Sans+Devanagari"]`)) {
+      const fontLink = document.createElement('link');
+      fontLink.rel = 'stylesheet';
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Noto+Sans+Devanagari:wght@700;800;900&family=Poppins:wght@800;900&display=swap';
+      document.head.appendChild(fontLink);
+    }
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -1245,7 +1251,7 @@
 
             if (isKaraokeActive) {
               const words = getCueWords(active);
-              ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
+              ctx.font = `900 ${fontSize}px "Montserrat", "Noto Sans Devanagari", "Poppins", -apple-system, sans-serif`;
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
 
@@ -1295,23 +1301,24 @@
                   }
                 } else if (currentStyle === 'minimal') {
                   ctx.fillStyle = isCurrent ? '#38bdf8' : '#ffffff';
-                  ctx.font = `600 ${fontSize * (isCurrent ? 1.05 : 0.9)}px -apple-system, sans-serif`;
+                  ctx.font = `600 ${fontSize * (isCurrent ? 1.05 : 0.9)}px "Montserrat", "Noto Sans Devanagari", "Poppins", -apple-system, sans-serif`;
                   ctx.fillText(w.word, wCenterX, y);
                 } else if (currentStyle === 'neon') {
-                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
                   ctx.strokeStyle = '#000000';
                   ctx.strokeText(w.word, wCenterX, y);
                   ctx.fillStyle = isCurrent ? '#ff007f' : '#00f2fe';
                   ctx.fillText(w.word, wCenterX, y);
                 } else if (currentStyle === 'gradient') {
-                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
                   ctx.strokeStyle = '#000000';
                   ctx.strokeText(w.word, wCenterX, y);
-                  ctx.fillStyle = isCurrent ? '#ffe600' : '#a855f7';
+                  const palette = ['#f43f5e', '#c084fc', '#38bdf8', '#34d399'];
+                  ctx.fillStyle = isCurrent ? '#ffe600' : palette[i % palette.length];
                   ctx.fillText(w.word, wCenterX, y);
                 } else {
                   // Viral Reel
-                  ctx.lineWidth = Math.max(3, fontSize * 0.15);
+                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
                   ctx.strokeStyle = '#000000';
                   ctx.strokeText(w.word, wCenterX, y);
                   ctx.fillStyle = isCurrent ? '#00f2fe' : '#ffeb3b';
@@ -1322,7 +1329,7 @@
               }
             } else {
               // Static subtitle rendering
-              ctx.font = `900 ${fontSize}px Impact, -apple-system, sans-serif`;
+              ctx.font = `900 ${fontSize}px "Montserrat", "Noto Sans Devanagari", "Poppins", -apple-system, sans-serif`;
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
 
