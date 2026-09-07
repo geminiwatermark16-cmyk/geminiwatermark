@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v5';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v6';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;

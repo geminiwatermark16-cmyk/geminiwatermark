@@ -79,21 +79,21 @@ if (coreReady) {
 }
 
 const modules = [
-  './background-remover-v1.js?v=20260907-v3',
-  './video-upscale-v1.js?v=20260907-v3',
-  './video-upscale-mp4-v2.js?v=20260907-v3',
-  './video-enhance-gpu-v2.js?v=20260907-v3',
-  './video-paid-gate.js?v=20260907-v3',
-  './conversion-landing-v1.js?v=20260907-v3',
-  './social-proof-v1.js?v=20260907-v3',
-  './logo-motion-entry.js?v=20260907-v3',
-  './trust-enhancements.js?v=20260907-v3',
-  './india-trust.js?v=20260907-v3',
-  './before-after-slider-v1.js?v=20260907-v3',
-  './social-extract-tab-v1.js?v=20260907-v3',
-  './batch-image-cleaner-v1.js?v=20260907-v3',
-  './subtitle-studio-v1.js?v=20260907-v5',
-  './tab-coordinator-v1.js?v=20260907-v3',
+  '/src/background-remover-v1.js?v=20260907-v3',
+  '/src/video-upscale-v1.js?v=20260907-v3',
+  '/src/video-upscale-mp4-v2.js?v=20260907-v3',
+  '/src/video-enhance-gpu-v2.js?v=20260907-v3',
+  '/src/video-paid-gate.js?v=20260907-v3',
+  '/src/conversion-landing-v1.js?v=20260907-v3',
+  '/src/social-proof-v1.js?v=20260907-v3',
+  '/src/logo-motion-entry.js?v=20260907-v3',
+  '/src/trust-enhancements.js?v=20260907-v3',
+  '/src/india-trust.js?v=20260907-v3',
+  '/src/before-after-slider-v1.js?v=20260907-v3',
+  '/src/social-extract-tab-v1.js?v=20260907-v3',
+  '/src/batch-image-cleaner-v1.js?v=20260907-v3',
+  '/src/subtitle-studio-v1.js?v=20260907-v6',
+  '/src/tab-coordinator-v1.js?v=20260907-v3',
 ];
 
 Promise.allSettled(modules.map((url) => import(url))).then((results) => {
