@@ -1,6 +1,5 @@
 (() => {
-  console.log('--- GW SUBTITLE STUDIO V7 BOOT ---');
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v7';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v8';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -954,23 +953,29 @@
 
   ensureStyles();
 
-  async function startSubtitleStudio() {
-    console.log('--- startSubtitleStudio CALLED ---');
-    if (document.getElementById('subtitlesTab')) return;
-    const started = Date.now();
-    while (Date.now() - started < 15000) {
-      if (document.querySelector('#tool .tabs') && document.getElementById('tool')) {
-        console.log('--- startSubtitleStudio FOUND #tool .tabs! Calling init... ---');
-        initSubtitleStudio();
-        return;
-      }
-      await new Promise(r => setTimeout(r, 50));
+  function ensureSubtitleStudioMounted() {
+    const tabs = document.querySelector('#tool .tabs');
+    const tool = document.getElementById('tool');
+    if (tabs && tool && !document.getElementById('subtitlesTab')) {
+      initSubtitleStudio();
     }
-    console.warn('--- startSubtitleStudio TIMED OUT WAITING FOR #tool .tabs ---');
   }
 
+  // 1. MutationObserver ensures re-mounting if app.innerHTML is overwritten
+  try {
+    const domObserver = new MutationObserver(() => {
+      ensureSubtitleStudioMounted();
+    });
+    domObserver.observe(document.documentElement, { childList: true, subtree: true });
+  } catch {}
+
+  // 2. High-frequency poller during initial boot window
+  const bootInterval = setInterval(ensureSubtitleStudioMounted, 60);
+  setTimeout(() => clearInterval(bootInterval), 10000);
+
+  // 3. Immediate attempt
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startSubtitleStudio);
+    document.addEventListener('DOMContentLoaded', ensureSubtitleStudioMounted);
   }
-  startSubtitleStudio();
+  ensureSubtitleStudioMounted();
 })();
