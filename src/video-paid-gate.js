@@ -15,6 +15,7 @@
   };
 
   applyUi();
-  const observer = new MutationObserver(() => applyUi());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(applyUi, 300);
+  setTimeout(applyUi, 1200);
+  setTimeout(applyUi, 3000);
 })();

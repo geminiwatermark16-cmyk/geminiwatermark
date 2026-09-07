@@ -373,11 +373,8 @@ document.addEventListener('click', (event) => {
   runCheckout(button);
 }, true);
 
-const videoBadge = document.getElementById('videoBadge');
-if (videoBadge) {
-  new MutationObserver(() => queueMicrotask(patchUploadFirstCopy))
-    .observe(videoBadge, { childList: true, subtree: true, characterData: true });
-}
+// Do not observe videoBadge with a MutationObserver that mutates videoBadge,
+// as that triggers an infinite microtask loop and freezes the browser main thread.
 for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'buyPlan']) {
   document.getElementById(id)?.addEventListener('click', () => setTimeout(patchUploadFirstCopy, 0));
 }

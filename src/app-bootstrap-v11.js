@@ -275,14 +275,7 @@ installRegionalCheckout();
 promoteVideoForAdTraffic();
 loadRegionalPlanPrice();
 
-const videoBadge = document.getElementById('videoBadge');
-if (videoBadge) {
-  new MutationObserver(() => {
-    patchPaidAndRegionalCopy();
-    installRegionalCheckout();
-  }).observe(videoBadge, { childList: true, subtree: true, characterData: true });
-}
-
+// No MutationObserver on videoBadge to avoid recursion/freeze loops.
 for (const id of ['videoTab', 'imageTab', 'chooseAnother', 'closeModal', 'accountBtn', 'footerAccountBtn']) {
   document.getElementById(id)?.addEventListener('click', () => setTimeout(() => {
     patchPaidAndRegionalCopy();
