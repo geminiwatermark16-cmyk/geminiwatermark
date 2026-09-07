@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v3';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260907-v4';
 
   function ensureStyles() {
     if (document.querySelector(`link[href*="subtitle-studio.css"]`)) return;
@@ -129,6 +129,71 @@
     return result;
   }
 
+  // Pure JavaScript 16-bit PCM WAV Encoder
+  function encodeWav(samples, sampleRate) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    }
+
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true); // Mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    return new Blob([view], { type: 'audio/wav' });
+  }
+
+  async function extractAudioWav(file, maxSeconds = 90) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const arrayBuffer = await file.arrayBuffer();
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+
+    const duration = Math.min(decoded.duration, maxSeconds);
+    const targetLength = Math.floor(duration * 16000);
+    const offlineCtx = new OfflineAudioContext(1, targetLength, 16000);
+    const source = offlineCtx.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offlineCtx.destination);
+    source.start(0);
+
+    const rendered = await offlineCtx.startRendering();
+    const samples = rendered.getChannelData(0);
+    return encodeWav(samples, 16000);
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result || '');
+        const base64 = dataUrl.split(',')[1] || '';
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
   function initSubtitleStudio() {
     const tabs = document.querySelector('#tool .tabs');
     const tool = document.getElementById('tool');
@@ -184,7 +249,7 @@
 
           <!-- Auto Transcription & Generation -->
           <div class="gw-sub-section">
-            <h4>2. AI Auto-Transcription & Subtitles</h4>
+            <h4>2. AI Voice Transcription & Subtitles</h4>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <select id="gwSubLang" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:12px;">
                 <option value="hi-IN">Hindi (हिंदी)</option>
@@ -192,13 +257,14 @@
                 <option value="en-US">English (US)</option>
                 <option value="es-ES">Spanish</option>
               </select>
+              <button id="gwWhisperAiBtn" class="gw-sub-btn magic" type="button">🤖 Whisper AI (Accurate Voice)</button>
               <button id="gwAutoGenerateTimelineBtn" class="gw-sub-btn primary" type="button">⚡ Instant Auto-Timeline</button>
-              <button id="gwAutoTranscribeBtn" class="gw-sub-btn magic" type="button">🎙️ Auto-Transcribe Audio</button>
               <button id="gwPasteScriptBtn" class="gw-sub-btn secondary" type="button">📝 Paste Text / Script</button>
+              <button id="gwAutoTranscribeBtn" class="gw-sub-btn secondary" type="button">🎙️ Mic Transcribe</button>
               <button id="gwUploadSrtBtn" class="gw-sub-btn secondary" type="button">📁 Upload .SRT</button>
               <input type="file" id="gwSrtFileInput" accept=".srt,.vtt" hidden>
             </div>
-            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Choose "Instant Auto-Timeline" for instant captions or "Auto-Transcribe" to listen.</p>
+            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Click "Whisper AI" for exact voice words, or "Instant Auto-Timeline" / "Paste Text".</p>
           </div>
 
           <!-- Subtitle Styling Presets -->
@@ -252,6 +318,22 @@
           </div>
         </div>
       </div>
+
+      <!-- API Key Modal -->
+      <div id="gwKeyModal" class="gw-sub-modal hidden">
+        <div class="gw-sub-modal-card">
+          <h3>
+            <span>🤖 Connect Whisper AI</span>
+            <button id="gwCloseKeyModal" type="button" style="border:none; background:none; font-size:24px; cursor:pointer;">×</button>
+          </h3>
+          <p>To transcribe the video's voice cleanly with AI (no mic needed), enter your API key (100% free at <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:#6366f1; font-weight:700;">console.groq.com/keys</a>, Google AI Studio, or OpenAI). Saved locally in your browser only.</p>
+          <input id="gwApiKeyInput" type="password" placeholder="Enter Groq (gsk_...), Gemini (AIza...) or OpenAI (sk-...) Key" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:10px; font-family:monospace; box-sizing:border-box;">
+          <div class="gw-sub-modal-actions">
+            <button id="gwCancelKeyBtn" type="button" class="gw-sub-btn secondary">Cancel</button>
+            <button id="gwSaveKeyBtn" type="button" class="gw-sub-btn magic">Save & Transcribe Voice</button>
+          </div>
+        </div>
+      </div>
     `;
 
     if (singleWorkspace) {
@@ -290,6 +372,7 @@
     const fileInput = document.getElementById('gwSubFileInput');
     const fileMeta = document.getElementById('gwSubFileMeta');
     const useCleanedBtn = document.getElementById('gwUseCleanedVideoBtn');
+    const whisperAiBtn = document.getElementById('gwWhisperAiBtn');
     const transcribeBtn = document.getElementById('gwAutoTranscribeBtn');
     const autoGenBtn = document.getElementById('gwAutoGenerateTimelineBtn');
     const transcribeStatus = document.getElementById('gwTranscribeStatus');
@@ -302,6 +385,12 @@
     const applyPasteBtn = document.getElementById('gwApplyPasteBtn');
     const scriptText = document.getElementById('gwScriptText');
 
+    const keyModal = document.getElementById('gwKeyModal');
+    const closeKeyBtn = document.getElementById('gwCloseKeyModal');
+    const cancelKeyBtn = document.getElementById('gwCancelKeyBtn');
+    const saveKeyBtn = document.getElementById('gwSaveKeyBtn');
+    const apiKeyInput = document.getElementById('gwApiKeyInput');
+
     // Video Loading
     function loadVideo(file) {
       videoFile = file;
@@ -312,11 +401,10 @@
       video.onloadedmetadata = () => {
         const dur = video.duration || 12;
         const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
-        // Auto-populate full timeline across the video duration
         cues = generateDefaultCues(dur, lang);
         renderCues();
         updateActiveSubtitle();
-        transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} subtitle cues for your ${Math.round(dur)}s video!`;
+        transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} subtitle cues for your ${Math.round(dur)}s video! Click "Whisper AI" for exact voice words.`;
       };
     }
 
@@ -426,7 +514,76 @@
       transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} synced subtitle cues for your ${Math.round(dur)}s video!`;
     };
 
-    // 2. Speech-to-Text Transcription with Continuous Auto-Restart
+    // 2. Direct Whisper AI Audio Transcription (No Mic Needed)
+    whisperAiBtn.onclick = async () => {
+      if (!videoFile) {
+        transcribeStatus.textContent = 'Please choose a video file first.';
+        return;
+      }
+
+      whisperAiBtn.disabled = true;
+      whisperAiBtn.textContent = '⏳ Extracting Audio…';
+      transcribeStatus.textContent = '🎵 Extracting audio track directly from video file…';
+
+      try {
+        const wavBlob = await extractAudioWav(videoFile);
+        whisperAiBtn.textContent = '🤖 Whisper AI Transcribing…';
+        transcribeStatus.textContent = `🤖 Sending audio to Whisper AI…`;
+
+        const audioBase64 = await blobToBase64(wavBlob);
+        const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
+        const savedKey = localStorage.getItem('gw_whisper_api_key') || '';
+
+        const res = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': savedKey
+          },
+          body: JSON.stringify({
+            audioBase64,
+            language: lang.split('-')[0],
+            format: 'wav'
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.cues) && data.cues.length > 0) {
+          cues = data.cues;
+          renderCues();
+          updateActiveSubtitle();
+          transcribeStatus.textContent = `✅ Whisper AI successfully transcribed ${cues.length} subtitle cues from video voice!`;
+        } else if (data.needKey) {
+          keyModal.classList.remove('hidden');
+          apiKeyInput.focus();
+          transcribeStatus.textContent = '🔑 Enter your free Groq Whisper API key to transcribe video voice.';
+        } else {
+          throw new Error(data.error || 'Whisper AI could not transcribe audio.');
+        }
+      } catch (err) {
+        console.warn('Whisper error:', err);
+        transcribeStatus.textContent = `Note: ${err.message || 'Whisper AI call failed.'} You can use "Instant Auto-Timeline" or "Paste Text".`;
+      } finally {
+        whisperAiBtn.disabled = false;
+        whisperAiBtn.textContent = '🤖 Whisper AI (Accurate Voice)';
+      }
+    };
+
+    // Key Modal Handlers
+    closeKeyBtn.onclick = () => keyModal.classList.add('hidden');
+    cancelKeyBtn.onclick = () => keyModal.classList.add('hidden');
+    saveKeyBtn.onclick = () => {
+      const k = apiKeyInput.value.trim();
+      if (!k) {
+        alert('Please enter your API key.');
+        return;
+      }
+      localStorage.setItem('gw_whisper_api_key', k);
+      keyModal.classList.add('hidden');
+      whisperAiBtn.click();
+    };
+
+    // 3. Mic Speech-to-Text Transcription with Continuous Auto-Restart
     transcribeBtn.onclick = () => {
       if (!video.src) {
         transcribeStatus.textContent = 'Please choose a video file first.';
@@ -450,13 +607,13 @@
           try { activeRecognition.stop(); } catch {}
         }
         video.pause();
-        transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+        transcribeBtn.textContent = '🎙️ Mic Transcribe';
         transcribeStatus.textContent = `Transcription stopped. Total ${cues.length} subtitle cues.`;
         return;
       }
 
       isTranscribing = true;
-      transcribeBtn.textContent = '⏹ Stop Transcribing';
+      transcribeBtn.textContent = '⏹ Stop Mic';
       cues = [];
       renderCues();
 
@@ -501,9 +658,9 @@
 
         recognition.onerror = (event) => {
           if (event.error === 'not-allowed') {
-            transcribeStatus.textContent = 'Microphone permission blocked. Please allow mic in browser settings or use "Instant Auto-Timeline".';
+            transcribeStatus.textContent = 'Microphone permission blocked. Please allow mic in browser settings or use "Whisper AI" / "Instant Auto-Timeline".';
             isTranscribing = false;
-            transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+            transcribeBtn.textContent = '🎙️ Mic Transcribe';
           }
         };
 
@@ -512,11 +669,10 @@
             try { recognition.start(); } catch {}
           } else if (!isTranscribing || video.ended) {
             isTranscribing = false;
-            transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+            transcribeBtn.textContent = '🎙️ Mic Transcribe';
             if (cues.length > 0) {
               transcribeStatus.textContent = `✅ Transcription complete! Generated ${cues.length} subtitle cues.`;
             } else {
-              // Fallback so user NEVER gets 0 cues
               transcribeStatus.textContent = `⚡ Microphone captured 0 words. Auto-generated synced subtitle timeline for your video!`;
               cues = generateDefaultCues(video.duration || 15, lang);
               renderCues();
@@ -534,7 +690,7 @@
 
       video.onended = () => {
         isTranscribing = false;
-        transcribeBtn.textContent = '🎙️ Auto-Transcribe Audio';
+        transcribeBtn.textContent = '🎙️ Mic Transcribe';
         if (activeRecognition) {
           try { activeRecognition.stop(); } catch {}
         }
@@ -549,7 +705,7 @@
       startRecognition();
     };
 
-    // 3. Paste Script / Lyrics Modal Feature
+    // 4. Paste Script / Lyrics Modal Feature
     pasteScriptBtn.onclick = () => {
       pasteModal.classList.remove('hidden');
       scriptText.focus();
@@ -581,7 +737,7 @@
       transcribeStatus.textContent = `✅ Successfully synced ${cues.length} lines of your script across the video!`;
     };
 
-    // 4. Upload .SRT / .VTT
+    // 5. Upload .SRT / .VTT
     uploadSrtBtn.onclick = () => srtFileInput.click();
     srtFileInput.onchange = (e) => {
       const file = e.target.files?.[0];
@@ -602,7 +758,7 @@
       reader.readAsText(file);
     };
 
-    // 5. Export .SRT
+    // 6. Export .SRT
     document.getElementById('gwExportSrtBtn').onclick = () => {
       let srt = '';
       cues.forEach((cue, i) => {
@@ -623,7 +779,7 @@
       a.click();
     };
 
-    // 6. Export .VTT
+    // 7. Export .VTT
     document.getElementById('gwExportVttBtn').onclick = () => {
       let vtt = 'WEBVTT\n\n';
       cues.forEach((cue, i) => {
@@ -643,7 +799,7 @@
       a.click();
     };
 
-    // 7. Burn-In Subtitles into Video via Canvas & MediaRecorder
+    // 8. Burn-In Subtitles into Video via Canvas & MediaRecorder
     document.getElementById('gwBurnSubBtn').onclick = async () => {
       if (!videoFile || !video.src) {
         alert('Please select or upload a video first.');
