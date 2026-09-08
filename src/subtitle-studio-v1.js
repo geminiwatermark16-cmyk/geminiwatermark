@@ -617,8 +617,8 @@
       </div>
     `;
 
-    if (singleWorkspace) {
-      singleWorkspace.appendChild(panel);
+    if (singleWorkspace && singleWorkspace.parentNode) {
+      singleWorkspace.parentNode.insertBefore(panel, singleWorkspace.nextSibling);
     } else {
       tool.appendChild(panel);
     }
@@ -673,10 +673,18 @@
           if (el.id !== 'subtitlesPanel') el.style.display = 'none';
         });
       }
+      panel.classList.add('active');
+      panel.classList.remove('hidden');
       panel.style.display = 'block';
     }
 
-    subTab.onclick = selectSubtitlesTab;
+    subTab.onclick = () => {
+      if (typeof window.__GW_SWITCH_TAB__ === 'function') {
+        window.__GW_SWITCH_TAB__('subtitlesTab');
+      } else {
+        selectSubtitlesTab();
+      }
+    };
 
     function checkCleanedVideo() {
       const activeVideo = document.querySelector('#workspace video, #tool video');

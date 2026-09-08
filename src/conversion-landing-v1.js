@@ -88,6 +88,7 @@
     if (location.pathname !== '/' && location.pathname !== '/index.html') return false;
     const params = new URLSearchParams(location.search);
     if (params.get('mode') === 'image') return false;
+    if (params.get('mode') === 'subtitles' || document.getElementById('subtitlesTab')) return false;
     const videoTab = document.getElementById('videoTab');
     if (!videoTab) return false;
     if (!videoTab.classList.contains('active')) {
