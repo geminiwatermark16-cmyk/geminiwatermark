@@ -1631,6 +1631,7 @@
 
     renderCues();
     updateSamplePreview();
+    selectSubtitlesTab();
   }
 
   ensureStyles();
