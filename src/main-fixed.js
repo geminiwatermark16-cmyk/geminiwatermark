@@ -2,15 +2,23 @@ const app = document.querySelector('#app');
 
 app.innerHTML = `
 <header class="nav wrap">
-  <a class="brand" href="#top"><span>✦</span> geminiwatermark.space</a>
-  <nav><a href="#tool">Remover</a><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
-  <a class="navBtn" href="#tool">Remove watermark</a>
+  <a class="brand" href="#top"><span>⚡</span> AutoCap <b>Studio</b></a>
+  <nav>
+    <a href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();">⚡ Auto Subtitles</a>
+    <a href="#tool" onclick="document.getElementById('videoTab')?.click();">💧 Watermark Remover</a>
+    <a href="#tool" onclick="document.getElementById('batchTab')?.click();">🖼️ Batch Cleaner</a>
+    <a href="#tool" onclick="document.getElementById('socialTab')?.click();">📊 Social Extract</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <a class="navBtn" href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();" style="background:#10b981; color:#fff; text-decoration:none;">Create Auto Subtitles →</a>
 </header>
 <main id="top">
   <section class="hero wrap">
-    <div class="badge"><i></i> Images free · 21 videos free · then ₹99</div>
-    <h1>Gemini watermark.<br><span>Gone in seconds.</span></h1>
-    <p class="lead">Remove supported visible Gemini watermarks from images and Veo videos in your browser. Images are free. Your first 21 successfully processed videos are free, then video processing unlocks with the ₹99 plan.</p>
+    <div class="badge"><i></i> 12 Indian languages · Hinglish that stays Hinglish</div>
+    <h1>Hinglish Caption Generator.<br><span>Auto Subtitles for Reels, Shorts & Videos.</span></h1>
+    <p class="lead">Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.</p>
 
     <section id="tool" class="tool">
       <div class="tabs">
