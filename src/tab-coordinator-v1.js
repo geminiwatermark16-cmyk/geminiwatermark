@@ -1,7 +1,7 @@
 // Master Tab & Workspace Coordinator for geminiwatermark.space
-// Handles unified, conflict-free switching between all 6 tools.
+// Handles unified, conflict-free switching between all tools.
 (() => {
-  const ALL_TABS = ['videoTab', 'imageTab', 'backgroundTab', 'upscaleTab', 'linkTab', 'subtitlesTab'];
+  const ALL_TABS = ['subtitlesTab', 'videoTab', 'imageTab', 'batchTab', 'linkTab', 'backgroundTab', 'upscaleTab'];
   let isActivating = false;
 
   function pauseAllMedia() {
@@ -41,35 +41,21 @@
       pauseAllMedia();
 
       // 3. Hide all custom injected panels cleanly
-      if (typeof window.__GW_HIDE_UPSCALE__ === 'function') window.__GW_HIDE_UPSCALE__();
-      else {
-        const p = document.getElementById('upscalePanel');
-        if (p) { p.classList.add('hidden'); p.style.display = 'none'; }
-      }
-
-      if (typeof window.__GW_HIDE_BG__ === 'function') window.__GW_HIDE_BG__();
-      else {
-        const p = document.getElementById('backgroundRemovePanel');
-        if (p) { p.classList.add('hidden'); p.style.display = 'none'; }
-      }
-
-      if (typeof window.__GW_HIDE_LINK__ === 'function') window.__GW_HIDE_LINK__();
-      else {
-        const p = document.getElementById('linkPanel');
-        if (p) { p.classList.remove('active'); p.style.display = 'none'; }
-      }
-
-      if (typeof window.__GW_HIDE_SUBTITLES__ === 'function') window.__GW_HIDE_SUBTITLES__();
-      else {
-        const p = document.getElementById('subtitlesPanel');
-        if (p) { p.classList.remove('active'); p.style.display = 'none'; }
-      }
-
-      if (typeof window.__GW_HIDE_BATCH__ === 'function') window.__GW_HIDE_BATCH__();
-      else {
-        const p = document.getElementById('gwBatchWorkspace');
-        if (p) { p.classList.remove('active'); p.style.display = 'none'; }
-      }
+      const customPanels = [
+        'upscalePanel',
+        'backgroundRemovePanel',
+        'linkPanel',
+        'subtitlesPanel',
+        'gwBatchWorkspace'
+      ];
+      customPanels.forEach((pId) => {
+        const p = document.getElementById(pId);
+        if (p) {
+          p.classList.remove('active');
+          p.classList.add('hidden');
+          p.style.display = 'none';
+        }
+      });
 
       // 4. Handle native remover vs custom feature views
       if (tabId === 'imageTab' || tabId === 'videoTab') {
@@ -107,29 +93,40 @@
         }
 
         // Show the selected custom panel
-        if (tabId === 'upscaleTab') {
-          if (typeof window.__GW_SHOW_UPSCALE__ === 'function') window.__GW_SHOW_UPSCALE__();
-          else {
-            const p = document.getElementById('upscalePanel');
-            if (p) { p.classList.remove('hidden'); p.style.display = 'block'; }
+        if (tabId === 'subtitlesTab') {
+          const p = document.getElementById('subtitlesPanel');
+          if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
+          }
+        } else if (tabId === 'batchTab') {
+          const p = document.getElementById('gwBatchWorkspace');
+          if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
+          }
+        } else if (tabId === 'linkTab' || tabId === 'socialTab') {
+          const p = document.getElementById('linkPanel');
+          if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
+          }
+        } else if (tabId === 'upscaleTab') {
+          const p = document.getElementById('upscalePanel');
+          if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
           }
         } else if (tabId === 'backgroundTab') {
-          if (typeof window.__GW_SHOW_BG__ === 'function') window.__GW_SHOW_BG__();
-          else {
-            const p = document.getElementById('backgroundRemovePanel');
-            if (p) { p.classList.remove('hidden'); p.style.display = 'block'; }
-          }
-        } else if (tabId === 'linkTab') {
-          if (typeof window.__GW_SHOW_LINK__ === 'function') window.__GW_SHOW_LINK__();
-          else {
-            const p = document.getElementById('linkPanel');
-            if (p) { p.classList.add('active'); p.style.display = 'block'; }
-          }
-        } else if (tabId === 'subtitlesTab') {
-          if (typeof window.__GW_SHOW_SUBTITLES__ === 'function') window.__GW_SHOW_SUBTITLES__();
-          else {
-            const p = document.getElementById('subtitlesPanel');
-            if (p) { p.classList.add('active'); p.style.display = 'block'; }
+          const p = document.getElementById('backgroundRemovePanel');
+          if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
           }
         }
       }
@@ -138,26 +135,31 @@
     }
   }
 
-  // Handle tab button clicks via standard bubbling (no capture, no synthetic loops)
+  // Handle tab button clicks via standard bubbling
   document.addEventListener('click', (event) => {
     const btn = event.target.closest('#tool .tabs button');
     if (!btn || isActivating) return;
-    if (ALL_TABS.includes(btn.id)) {
+    if (ALL_TABS.includes(btn.id) || btn.id === 'socialTab') {
       activateTab(btn.id);
     }
   });
 
   // Intercept header navigation shortcuts
   document.addEventListener('click', (event) => {
-    const link = event.target.closest('a[href*="subtitlesTab"], a.navBtn');
+    const link = event.target.closest('a[href*="subtitlesTab"], a.navBtn, a[href*="batchTab"], a[href*="socialTab"]');
     if (!link || isActivating) return;
-    if (link.getAttribute('href')?.includes('subtitlesTab')) {
+    const href = link.getAttribute('href') || '';
+    if (href.includes('subtitlesTab') || link.classList.contains('navBtn')) {
       event.preventDefault();
       activateTab('subtitlesTab');
       document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (link.classList.contains('navBtn')) {
+    } else if (href.includes('batchTab')) {
       event.preventDefault();
-      activateTab('videoTab');
+      activateTab('batchTab');
+      document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (href.includes('socialTab')) {
+      event.preventDefault();
+      activateTab('linkTab');
       document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });

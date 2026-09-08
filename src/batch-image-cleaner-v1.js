@@ -218,7 +218,14 @@
       hideBatchWorkspace();
     });
 
-    updateFileInputMultiple();
+    const tabs = document.querySelector('#tool .tabs');
+    if (tabs && !document.getElementById('batchTab')) {
+      const batchTab = document.createElement('button');
+      batchTab.id = 'batchTab';
+      batchTab.type = 'button';
+      batchTab.innerHTML = 'Batch Clean <b>Images</b>';
+      tabs.appendChild(batchTab);
+    }
 
     let batchWorkspace = document.getElementById('gwBatchWorkspace');
     if (!batchWorkspace) {
@@ -232,6 +239,7 @@
             <p id="gwBatchStatusText">Processing multiple images locally in browser...</p>
           </div>
           <div class="gw-batch-actions">
+            <button id="gwBatchSelectFiles" class="gw-batch-btn secondary" type="button">+ Select Images</button>
             <button id="gwBatchClear" class="gw-batch-btn secondary" type="button">Close Batch</button>
             <button id="gwBatchDownloadAll" class="gw-batch-btn primary" type="button" disabled>Download All Cleaned ↓</button>
           </div>
@@ -246,6 +254,10 @@
       } else {
         tool.appendChild(batchWorkspace);
       }
+      document.getElementById('gwBatchSelectFiles')?.addEventListener('click', () => {
+        fileInput.setAttribute('multiple', '');
+        fileInput.click();
+      });
     }
 
     function showBatchWorkspace() {
