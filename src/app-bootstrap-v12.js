@@ -176,8 +176,7 @@ function setText(selectorOrElement, text) {
 }
 
 function patchUploadFirstCopy() {
-  setText('.hero .badge', '✦ 12 Indian languages · Hinglish that stays Hinglish');
-  setText('.hero .lead', 'Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.');
+  setText('.hero .lead', 'Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.');
   setText('#pricing .sectionLead', 'Auto Subtitles, video watermark removal, and image processing are completely free to use directly in your browser with zero limits.');
 
   const videoBadge = document.getElementById('videoBadge');

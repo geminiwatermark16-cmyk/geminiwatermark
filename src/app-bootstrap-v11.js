@@ -128,10 +128,9 @@ function patchCheckoutIdentityUi() {
 }
 
 function patchPaidAndRegionalCopy() {
-  setHtml(document.querySelector('.hero .badge'), `<i></i> 12 Indian languages · Hinglish that stays Hinglish`);
   setText(
     document.querySelector('.hero .lead'),
-    `Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.`
+    `Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.`
   );
 
   setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>100%</b><span>Free for all</span>');

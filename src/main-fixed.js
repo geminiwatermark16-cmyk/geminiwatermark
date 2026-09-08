@@ -16,9 +16,25 @@ app.innerHTML = `
 </header>
 <main id="top">
   <section class="hero wrap">
-    <div class="badge"><i></i> 12 Indian languages · Hinglish that stays Hinglish</div>
-    <h1>Hinglish Caption Generator.<br><span>Auto Subtitles for Reels, Shorts & Videos.</span></h1>
-    <p class="lead">Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.</p>
+    <div class="hero-grid">
+      <div>
+        <div class="ac-badge">12 Indian languages · Hinglish that stays Hinglish</div>
+        <h1>Every word, <span class="ac-highlight">on the beat.</span></h1>
+        <p class="lead">Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.</p>
+
+        <div class="ac-hero-btns">
+          <button type="button" onclick="document.getElementById('subtitlesTab')?.click();" class="ac-btn-primary">Try it free →</button>
+          <a href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();" class="ac-btn-secondary">See the styles</a>
+        </div>
+      </div>
+
+      <div class="ac-phone-wrap">
+        <div class="ac-phone-bg"></div>
+        <div class="ac-phone-caption">
+          <span class="ac-phone-tag">this is how you</span>
+        </div>
+      </div>
+    </div>
 
     <section id="tool" class="tool">
       <div class="tabs">

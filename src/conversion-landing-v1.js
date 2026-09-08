@@ -61,14 +61,14 @@
     const hero = document.querySelector('.hero');
     if (!hero) return false;
 
-    const badge = hero.querySelector('.badge');
-    if (badge) badge.innerHTML = `<i></i> 12 Indian languages · Hinglish that stays Hinglish`;
+    const badge = hero.querySelector('.ac-badge, .badge');
+    if (badge) badge.textContent = `12 Indian languages · Hinglish that stays Hinglish`;
 
     const h1 = hero.querySelector('h1');
-    if (h1) h1.innerHTML = 'Hinglish Caption Generator.<br><span>Auto Subtitles for Reels, Shorts & Videos.</span>';
+    if (h1) h1.innerHTML = 'Every word, <span class="ac-highlight">on the beat.</span>';
 
     const lead = hero.querySelector('.lead');
-    if (lead) lead.textContent = `Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.`;
+    if (lead) lead.textContent = `Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.`;
 
     const navBtn = document.querySelector('.navBtn');
     if (navBtn) {
