@@ -177,8 +177,12 @@
       activateTab('batchTab');
     } else if (params.get('mode') === 'social' || hash.includes('socialTab') || hash.includes('linkTab')) {
       activateTab('linkTab');
-    } else {
+    } else if (params.get('mode') === 'subtitles' || hash.includes('subtitlesTab')) {
       activateTab('subtitlesTab');
+    } else {
+      // Watermark cleanup is the homepage's job. Subtitles are a secondary tool
+      // and must be chosen, not landed on.
+      activateTab('imageTab');
     }
   }, 120);
 })();

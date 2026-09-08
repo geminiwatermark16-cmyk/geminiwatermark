@@ -33,7 +33,7 @@
         <div class="gwTrustIntro">
           <span>TRUST & PRIVACY</span>
           <h2>Private by default.<br>Clear from the start.</h2>
-          <p>Try the remover before paying. Supported media is processed in your browser, checkout is handled through Cashfree, and the ₹99 video plan has clear 30-day terms with no automatic renewal.</p>
+          <p>Check your file before anything runs. Supported media is processed in your browser, and image and video cleanup are free with no account and no subscription.</p>
         </div>
 
         <div class="gwTrustGrid">
@@ -48,14 +48,14 @@
             <p>The site does not create a cloud gallery or upload-history library of the media you process.</p>
           </article>
           <article>
-            <div class="gwTrustIcon">₹</div>
-            <b>Cashfree checkout</b>
-            <p>Payment checkout is handled through Cashfree and access unlocks only after server-side payment verification.</p>
+            <div class="gwTrustIcon">✓</div>
+            <b>Free to use</b>
+            <p>Image and video cleanup are free. There is no account, no card and no subscription to cancel.</p>
           </article>
           <article>
-            <div class="gwTrustIcon">30</div>
-            <b>No auto-renewal</b>
-            <p>The ₹99 video plan stays active for 30 days after successful payment and does not automatically renew.</p>
+            <div class="gwTrustIcon">◈</div>
+            <b>Visible marks only</b>
+            <p>The tool targets supported visible overlays. It does not remove SynthID or other invisible provenance signals.</p>
           </article>
         </div>
 
@@ -72,7 +72,7 @@
         <div class="gwProofBar" aria-label="Service trust highlights">
           <span>✓ Secure HTTPS connection</span>
           <span>✓ Checkout via Cashfree</span>
-          <span>✓ Try before paying</span>
+          <span>✓ Free to use</span>
           <span>✓ No account needed for free image cleanup</span>
           <span>✓ Live support available</span>
           <span>✓ Privacy & refund policies published</span>

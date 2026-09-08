@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     requiresIndianPhone: false,
     requiresEmail: false,
     availablePlans: [
-      { id: 'free', name: 'Free Forever Plan', amount: 0, currency: 'INR', displayPrice: 'Free', durationDays: 3650, description: 'Unlimited videos & images · 100% Free', popular: true },
+      { id: 'free', name: 'Free access', amount: 0, currency: 'INR', displayPrice: 'Free', durationDays: 3650, description: 'Image and video cleanup, no account required', popular: true },
     ],
   });
 };

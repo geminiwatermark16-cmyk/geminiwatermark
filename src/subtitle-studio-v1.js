@@ -15,8 +15,8 @@
     document.head.appendChild(link);
   }
 
-  // AutoCap Presets List (16 complete preset card styles matching AutoCap.in)
-  const AUTOCAP_PRESETS = [
+  // Caption preset styles offered by the subtitle studio.
+  const CAPTION_PRESETS = [
     { id: 'viral', name: 'Viral Reel', badge: 'VIRAL', sample: 'VIRAL REEL 🔥', font: 'Montserrat', activeColor1: '#00f2fe', activeColor2: '#ffeb3b' },
     { id: 'hormozi', name: 'Hormozi Pop', badge: 'TRENDING', sample: 'HORMOZI POP', font: 'Montserrat', activeColor1: '#ffe600', activeColor2: '#000000' },
     { id: 'cinematic', name: 'Cinematic', badge: 'PROFESSIONAL', sample: 'CINEMATIC 🎬', font: 'Montserrat', activeColor1: '#d4af37', activeColor2: '#ffffff' },
@@ -409,7 +409,7 @@
     const subTab = document.createElement('button');
     subTab.id = 'subtitlesTab';
     subTab.type = 'button';
-    subTab.innerHTML = 'Auto Subtitles <b>AutoCap</b>';
+    subTab.innerHTML = 'Auto Subtitles <b>Beta</b>';
     tabs.appendChild(subTab);
 
     // Create Studio Panel
@@ -492,15 +492,15 @@
           <!-- Subtitle Styling Presets & Customizer -->
           <div class="gw-sub-section">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <h4 style="margin:0;">3. AutoCap Preset Gallery (16 Styles)</h4>
+              <h4 style="margin:0;">3. Caption style gallery</h4>
               <label style="font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:5px; cursor:pointer;">
                 <input type="checkbox" id="gwKaraokeToggle" checked style="accent-color:#10b981; cursor:pointer;"> 🎤 Word Karaoke
               </label>
             </div>
 
-            <!-- AutoCap Cards Gallery Grid -->
+            <!-- Caption style gallery -->
             <div class="gw-preset-gallery" id="gwPresetGallery">
-              ${AUTOCAP_PRESETS.map(p => `
+              ${CAPTION_PRESETS.map(p => `
                 <div class="gw-style-card ${p.id === currentStyle ? 'active' : ''}" data-style="${p.id}">
                   <div class="gw-card-preview gw-style-${p.id}">
                     <span class="gw-word active-word" style="font-size:12px;">${p.sample}</span>
@@ -513,7 +513,7 @@
               `).join('')}
             </div>
 
-            <!-- AutoCap Customizer Panel -->
+            <!-- Style customizer -->
             <div class="gw-customizer-panel">
               <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                 <span>🎨 Preset Color Customizer</span>
@@ -945,13 +945,13 @@
       isDraggingPosHandle = false;
     });
 
-    // AutoCap Preset Cards Click Handler
+    // Caption style card click handler
     document.querySelectorAll('.gw-style-card').forEach(card => {
       card.onclick = () => {
         document.querySelectorAll('.gw-style-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
         currentStyle = card.dataset.style;
-        const presetObj = AUTOCAP_PRESETS.find(p => p.id === currentStyle);
+        const presetObj = CAPTION_PRESETS.find(p => p.id === currentStyle);
         if (presetObj) {
           customColors.activeColor1 = presetObj.activeColor1;
           customColors.activeColor2 = presetObj.activeColor2;
@@ -1006,7 +1006,7 @@
     };
 
     resetCustomizerBtn.onclick = () => {
-      const presetObj = AUTOCAP_PRESETS.find(p => p.id === currentStyle) || AUTOCAP_PRESETS[0];
+      const presetObj = CAPTION_PRESETS.find(p => p.id === currentStyle) || CAPTION_PRESETS[0];
       customColors = {
         activeColor1: presetObj.activeColor1,
         activeColor2: presetObj.activeColor2,
@@ -1369,7 +1369,7 @@
       a.click();
     };
 
-    // 8. Burn-In Subtitles into Video via Canvas & MediaRecorder (Supports all 16 AutoCap presets & customizer)
+    // 8. Burn-In Subtitles into Video via Canvas & MediaRecorder (supports every caption preset and the customizer)
     document.getElementById('gwBurnSubBtn').onclick = async () => {
       if (!videoFile && (!video.src || video.src.startsWith('blob:') === false)) {
         alert('Please select or upload a video first.');

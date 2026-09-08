@@ -90,6 +90,13 @@ source = source.replace(
   '<footer><div class="wrap footerEnhanced"><b>✦ geminiwatermark.space</b><span>Independent utility · © 2026</span><nav class="footerLinks"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/refund-policy">Refund Policy</a><button id="footerAccountBtn" type="button">My Account</button></nav></div></footer>'
 );
 
+// The patched source runs from a blob: URL, which has no hierarchical base, so
+// its relative imports have to be absolute before it is compiled.
+source = source.replace(
+  /(['"])\.\/([\w.-]+\.js(?:\?[^'"]*)?)\1/g,
+  (_match, quote, file) => `${quote}${new URL(`./${file}`, import.meta.url).href}${quote}`
+);
+
 const appBlob = new Blob([source], { type: 'text/javascript' });
 const appUrl = URL.createObjectURL(appBlob);
 try {
@@ -109,7 +116,7 @@ shell.innerHTML = `
       <h2 id="gwAccountTitle">Plan & purchase</h2>
       <div id="accountContent" class="gwAccountContent"><p>Loading…</p></div>
       <div class="gwAccountActions">
-        <a href="#pricing" id="accountUpgrade">Buy / renew ₹99 plan</a>
+        <a href="#pricing" id="accountUpgrade">View access details</a>
         <button id="forgetAccount" type="button">Remove account from this browser</button>
       </div>
       <small>Account details are tied to the signed plan token stored on this browser. Media files are not uploaded or stored by this site.</small>
@@ -137,7 +144,7 @@ function fmtDate(value) {
 async function loadAccount() {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) {
-    accountContent.innerHTML = '<p>No paid plan is saved on this browser yet.</p><div class="gwAccountItem"><span>Current access</span><b>Images free · video trial / ₹99 plan</b></div>';
+    accountContent.innerHTML = '<p>No previous order is saved on this browser.</p><div class="gwAccountItem"><span>Current access</span><b>Image and video cleanup, free</b></div>';
     return;
   }
 
@@ -157,7 +164,7 @@ async function loadAccount() {
     accountContent.innerHTML = `
       <span class="gwStatus ${data.active ? '' : 'expired'}">${data.active ? 'ACTIVE' : 'EXPIRED'}</span>
       <div class="gwAccountGrid">
-        <div class="gwAccountItem"><span>Plan</span><b>${data.plan || '₹99 Video — 30 days'}</b></div>
+        <div class="gwAccountItem"><span>Plan</span><b>${data.plan || 'Previous video plan'}</b></div>
         <div class="gwAccountItem"><span>Status</span><b>${data.active ? 'Active' : 'Expired — renew to continue'}</b></div>
         <div class="gwAccountItem"><span>Paid on</span><b>${fmtDate(data.paidAt)}</b></div>
         <div class="gwAccountItem"><span>Expires on</span><b>${fmtDate(data.expiresAt)}</b></div>

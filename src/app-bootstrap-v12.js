@@ -1,5 +1,5 @@
-const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
-const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
+import { copy as planCopy } from './commercial-config.js?v=20260910-v19';
+
 const TOKEN_KEY = 'gw_video_plan_token_v1';
 const UNLIMITED_ACCESS_EMAIL = 'hyydikshant@gmail.com';
 
@@ -18,7 +18,7 @@ let funnelPlan = { ...DEFAULT_PLAN };
 function analyticsItem(value) {
   return [{
     item_id: 'video_30d',
-    item_name: 'Gemini/Veo video plan - 30 days',
+    item_name: 'Gemini/Veo video cleanup',
     price: Number(value) || 0,
     quantity: 1,
   }];
@@ -73,7 +73,7 @@ function trackInitiateCheckout({ orderId, amount, currency }) {
   fireMeta('InitiateCheckout', {
     value,
     currency: code,
-    content_name: '30-day video plan',
+    content_name: 'Video cleanup',
     content_type: 'product',
     num_items: 1,
   }, id);
@@ -99,7 +99,7 @@ window.__GW_TRACK_PURCHASE__ = ({ orderId, amount, currency } = {}) => {
   fireMeta('Purchase', {
     value,
     currency: code,
-    content_name: '30-day video plan',
+    content_name: 'Video cleanup',
     content_type: 'product',
     num_items: 1,
   }, eventId);
@@ -118,17 +118,7 @@ window.__GW_TRACK_PURCHASE__ = ({ orderId, amount, currency } = {}) => {
   });
 };
 
-// Video remains paid from the first processing attempt, but visitors can now
-// select their file before checkout so they know the video was accepted.
-try {
-  localStorage.setItem(TRIAL_COUNT_KEY, '21');
-  localStorage.setItem(LEGACY_TRIAL_KEY, '1');
-} catch {}
-
-// Patch the core runtime before the existing v11 bootstrap runs. v11 imports
-// the exact same runtime URL, so the ESM cache prevents a duplicate boot.
-await import('./runtime-funnel-patch-v1.js?v=20260907-v3');
-await import('./app-bootstrap-v11.js?v=20260907-v3');
+await import('./app-bootstrap-v11.js?v=20260910-v19');
 
 async function postJson(url, body) {
   const response = await fetch(url, {
@@ -175,26 +165,15 @@ function setText(selectorOrElement, text) {
   if (element && element.textContent !== text) element.textContent = text;
 }
 
+// Access labels only. The hero, pricing section and tool headings are served in
+// the HTML and owned by src/main-fixed.js respectively; rewriting them from here
+// is what previously let three files disagree about the price on one page.
 function patchUploadFirstCopy() {
-  setText('.hero .lead', 'Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.');
-  setText('#pricing .sectionLead', 'Auto Subtitles, video watermark removal, and image processing are completely free to use directly in your browser with zero limits.');
-
-  const videoBadge = document.getElementById('videoBadge');
-  if (videoBadge) videoBadge.textContent = 'Free';
-  const quotaTitle = document.getElementById('quotaTitle');
-  if (quotaTitle) quotaTitle.textContent = '100% Free Access';
-  const quotaText = document.getElementById('quotaText');
-  if (quotaText) quotaText.textContent = 'Free video & image cleanup';
-  const quotaPrice = document.getElementById('quotaPrice');
-  if (quotaPrice) quotaPrice.textContent = '₹0';
-  const toolTitle = document.getElementById('toolTitle');
-  if (toolTitle) toolTitle.textContent = 'Drop your video here';
-  const toolSub = document.getElementById('toolSub');
-  if (toolSub) toolSub.textContent = '1080p/720p portrait or landscape · MP4/WebM/MOV';
-  const dropStrong = document.getElementById('dropStrong');
-  if (dropStrong) dropStrong.textContent = 'Drop video here';
-  const dropMeta = document.getElementById('dropMeta');
-  if (dropMeta) dropMeta.textContent = '100% Free · local browser processing';
+  setText('#videoBadge', planCopy.videoBadge);
+  setText('#imageBadge', planCopy.imageBadge);
+  setText('#quotaTitle', planCopy.quotaTitle);
+  setText('#quotaText', planCopy.quotaText);
+  setText('#quotaPrice', planCopy.quotaPrice);
 }
 
 function validEmail(email) {
@@ -229,7 +208,7 @@ async function completePaidUnlock(verification) {
   });
 
   const msg = document.getElementById('checkoutMsg');
-  if (msg) msg.textContent = `Payment verified. ${funnelPlan.displayPrice} video plan is ACTIVE for 30 days.`;
+  if (msg) msg.textContent = 'Order verified.';
 
   if (typeof window.__GW_COMPLETE_PAID_UNLOCK__ === 'function') {
     Promise.resolve(window.__GW_COMPLETE_PAID_UNLOCK__()).catch((error) => {
@@ -314,7 +293,7 @@ async function runCheckout(button) {
   } catch (error) {
     if (msg) msg.textContent = error?.message || 'Checkout could not be completed.';
     button.disabled = false;
-    button.textContent = `Pay ${funnelPlan.displayPrice} with Cashfree`;
+    button.textContent = 'Verify order';
   }
 }
 

@@ -1,16 +1,5 @@
-// Paid-video policy: image cleanup stays free, but all video processing requires
-// an active paid plan before the first upload. Mark the browser trial as fully
-// consumed before the core runtime evaluates its entitlement gate.
-const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
-const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
+import { copy as planCopy } from './commercial-config.js?v=20260910-v19';
 
-try {
-  localStorage.setItem(TRIAL_COUNT_KEY, '21');
-  localStorage.setItem(LEGACY_TRIAL_KEY, '1');
-} catch {}
-
-// Load the existing app/account/payment runtime first. With the browser trial
-// locked above, its native entitlement gate requires payment for every video.
 await import('./runtime-loader.js?v=20260818-13');
 
 // Keep the current pure-browser story cleaner.
@@ -92,10 +81,6 @@ function setText(element, text) {
   if (element && element.textContent !== text) element.textContent = text;
 }
 
-function setHtml(element, html) {
-  if (element && element.innerHTML !== html) element.innerHTML = html;
-}
-
 function currentVideoAccess() {
   return { paid: true };
 }
@@ -127,32 +112,18 @@ function patchCheckoutIdentityUi() {
   }
 }
 
+// Only the tool's own access labels are patched here. Marketing copy belongs to
+// the served HTML, and prices come from commercial-config, so nothing in this
+// file may invent either.
 function patchPaidAndRegionalCopy() {
-  setText(
-    document.querySelector('.hero .lead'),
-    `Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.`
-  );
-
-  setHtml(document.querySelector('.metrics article:nth-child(3)'), '<b>100%</b><span>Free for all</span>');
-  setHtml(document.querySelector('.metrics article:nth-child(4)'), `<b>₹0</b><span>Free Forever</span>`);
-
-  setText(document.querySelector('#pricing h2'), `100% Free Forever.`);
-  setText(
-    document.querySelector('#pricing .sectionLead'),
-    `Both image and video processing are completely free with no payment, no subscriptions, and no credits. Clean unlimited images and videos directly in your browser.`
-  );
-
   const buyBtn = document.getElementById('buyPlan');
   if (buyBtn) buyBtn.style.display = 'none';
 
-  const videoBadge = document.getElementById('videoBadge');
-  if (videoBadge) setText(videoBadge, 'Free');
-
-  setText(document.getElementById('quotaTitle'), '100% Free Access');
-  setText(document.getElementById('quotaText'), 'Free video & image cleanup');
-  setText(document.getElementById('quotaPrice'), '₹0');
-  setText(document.getElementById('dropStrong'), 'Drop video here');
-  setText(document.getElementById('dropMeta'), '100% Free · local browser processing');
+  setText(document.getElementById('videoBadge'), planCopy.videoBadge);
+  setText(document.getElementById('imageBadge'), planCopy.imageBadge);
+  setText(document.getElementById('quotaTitle'), planCopy.quotaTitle);
+  setText(document.getElementById('quotaText'), planCopy.quotaText);
+  setText(document.getElementById('quotaPrice'), planCopy.quotaPrice);
 
   patchCheckoutIdentityUi();
 }

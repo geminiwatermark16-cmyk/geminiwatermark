@@ -37,6 +37,8 @@
   function installHeaderGuideLink() {
     const headerNav = document.querySelector('header.nav nav');
     if (!headerNav) return false;
+    // The served header already links the guides hub; only add one if it does not.
+    if (headerNav.querySelector('a[href="/blog"]')) return true;
     let a = headerNav.querySelector('[data-gemini-guide-link]');
     if (!a) {
       a = document.createElement('a');

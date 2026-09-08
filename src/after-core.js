@@ -84,7 +84,6 @@ const modules = [
   '/src/video-upscale-mp4-v2.js?v=20260907-v3',
   '/src/video-enhance-gpu-v2.js?v=20260907-v3',
   '/src/video-paid-gate.js?v=20260907-v3',
-  '/src/conversion-landing-v1.js?v=20260907-v3',
   '/src/social-proof-v1.js?v=20260907-v3',
   '/src/logo-motion-entry.js?v=20260907-v3',
   '/src/trust-enhancements.js?v=20260907-v3',

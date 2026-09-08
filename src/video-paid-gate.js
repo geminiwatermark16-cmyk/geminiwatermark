@@ -1,4 +1,4 @@
-// 100% Free: All video tools are completely unlocked for all users.
+// Video tools are unlocked for everyone; access does not depend on payment.
 (() => {
   const applyUi = () => {
     const tab = document.getElementById('upscaleTab');

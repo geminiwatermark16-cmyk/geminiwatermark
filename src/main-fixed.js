@@ -1,48 +1,36 @@
+import { copy as planCopy } from './commercial-config.js?v=20260910-v19';
+
 const app = document.querySelector('#app');
 
 if (!document.getElementById('tool')) {
   app.innerHTML = `
-<header class="nav wrap">
-  <a class="brand" href="#top"><span>⚡</span> AutoCap <b>Studio</b></a>
-  <nav>
-    <a href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();">⚡ Auto Subtitles</a>
-    <a href="#tool" onclick="document.getElementById('videoTab')?.click();">💧 Watermark Remover</a>
-    <a href="#tool" onclick="document.getElementById('batchTab')?.click();">🖼️ Batch Cleaner</a>
-    <a href="#tool" onclick="document.getElementById('socialTab')?.click();">📊 Social Extract</a>
-    <a href="#how">How it works</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#faq">FAQ</a>
-  </nav>
-  <a class="navBtn" href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();" style="background:#10b981; color:#fff; text-decoration:none;">Create Auto Subtitles →</a>
+<header class="nav">
+  <div class="wrap navInner">
+    <a class="brand" href="#top"><span>✦</span> GeminiWatermark</a>
+    <nav class="navLinks" aria-label="Primary">
+      <a href="/gemini-video-watermark-remover">Video remover</a>
+      <a href="/gemini-image-watermark-remover">Image remover</a>
+      <a href="/blog">Guides</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="navCta" href="#tool">Start free</a>
+  </div>
 </header>
 <main id="top">
-  <section class="hero wrap">
-    <div class="hero-grid">
-      <div>
-        <div class="ac-badge">12 Indian languages · Hinglish that stays Hinglish</div>
-        <h1>Every word, <span class="ac-highlight">on the beat.</span></h1>
-        <p class="lead">Auto-captions drift. Ours carry a start and end for every single word, so the highlight lands exactly when it is spoken. 12 Indian languages, in your own script or romanised — and every word stays editable before you export.</p>
-
-        <div class="ac-hero-btns">
-          <button type="button" onclick="document.getElementById('subtitlesTab')?.click();" class="ac-btn-primary">Try it free →</button>
-          <a href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();" class="ac-btn-secondary">See the styles</a>
-        </div>
+  <section class="hero">
+    <div class="wrap heroGrid">
+      <div class="heroCopy">
+        <p class="heroEyebrow">Private, in-browser cleanup</p>
+        <h1>Clean visible Gemini &amp; Veo watermarks without cropping the frame.</h1>
+        <p class="lead">Remove supported visible Gemini, Google Flow and legacy Veo overlays from images and video. Check your source first, preview the cleaned result, then download it.</p>
       </div>
-
-      <div class="ac-phone-wrap">
-        <div class="ac-phone-bg"></div>
-        <div class="ac-phone-caption">
-          <span class="ac-phone-tag">this is how you</span>
-        </div>
-      </div>
-    </div>
 
     <section id="tool" class="tool">
       <div class="tabs">
-        <button id="imageTab" class="active">Image <b>Free</b></button>
-        <button id="videoTab">Video <b id="videoBadge">Free</b></button>
+        <button id="imageTab" class="active" type="button">Image <b id="imageBadge">Free</b></button>
+        <button id="videoTab" type="button">Video <b id="videoBadge">Free</b></button>
       </div>
-      <div class="quota"><strong id="quotaTitle">Unlimited images</strong><span id="quotaText">Free image cleanup</span><em id="quotaPrice">₹0</em></div>
+      <div class="quota"><strong id="quotaTitle">Free access</strong><span id="quotaText">Image and video cleanup</span><em id="quotaPrice">Free</em></div>
       <div class="toolHead">
         <div><small>VISIBLE WATERMARK REMOVER</small><h2 id="toolTitle">Drop an image</h2><p id="toolSub">PNG, JPG, JPEG or WebP · up to 20 MB</p></div>
         <span class="local">● Local browser processing</span>
@@ -56,7 +44,7 @@ if (!document.getElementById('tool')) {
         <span class="upload">↑</span>
         <strong id="dropStrong">Drop image here</strong>
         <span id="dropSub">or click to browse from your device</span>
-        <em id="dropMeta">Images are free · your media is processed on this device</em>
+        <em id="dropMeta">Checked on this device before anything runs</em>
       </button>
       <div id="workspace" class="workspace hidden">
         <div class="previews">
@@ -67,7 +55,7 @@ if (!document.getElementById('tool')) {
         <p id="message" class="message"></p>
       </div>
     </section>
-    <p class="privacy">● Media processing stays on your device. Cashfree handles checkout data when you upgrade.</p>
+    </div>
   </section>
 </main>
 `;
@@ -77,14 +65,13 @@ if (!document.getElementById('payModal')) {
   const modalDiv = document.createElement('div');
   modalDiv.id = 'payModal';
   modalDiv.className = 'modal hidden';
-  modalDiv.innerHTML = `<div class="modalCard"><button id="closeModal" class="close">×</button><span class="modalKicker">VIDEO PLAN</span><h2>Unlock video</h2><p>Your 21 free videos are used. Continue with the ₹99 video plan.</p><div class="payPrice"><b>₹99</b><span>one-time checkout</span></div><label>Mobile number<input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></label><label>Email <em>optional</em><input id="email" type="email" placeholder="you@example.com"></label><p id="checkoutMsg" class="checkoutMsg"></p><button id="payBtn" class="payBtn">Pay ₹99 with Cashfree</button><small>Plan unlocks only after Cashfree payment is verified on the server.</small></div>`;
+  // Kept only so a returning Cashfree order from a previous paid plan can still
+  // be verified and restored. Current access does not require payment.
+  modalDiv.innerHTML = `<div class="modalCard"><button id="closeModal" class="close" aria-label="Close">×</button><span class="modalKicker">Order status</span><h2>Restore a previous order</h2><p>Image and video cleanup are free, so nothing needs to be bought. This only verifies an order from an earlier paid plan.</p><label>Mobile number<input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></label><label>Email <em>optional</em><input id="email" type="email" placeholder="you@example.com"></label><p id="checkoutMsg" class="checkoutMsg"></p><button id="payBtn" class="payBtn">Verify order</button><small>Orders are confirmed by server-side verification.</small></div>`;
   document.body.appendChild(modalDiv);
 }
 
 const $ = (id) => document.getElementById(id);
-const FREE_VIDEO_LIMIT = 21;
-const TRIAL_COUNT_KEY = 'gw_video_free_count_v2';
-const LEGACY_TRIAL_KEY = 'gw_video_free_used_v1';
 const TOKEN_KEY = 'gw_video_plan_token_v1';
 const state = { mode: 'image', file: null, result: null, engine: null, paid: true, detected: null, videoSize: null };
 const urls = new Set();
@@ -95,14 +82,6 @@ const engineUrls = [
 
 function objectUrl(blob) { const url = URL.createObjectURL(blob); urls.add(url); return url; }
 function revokeAll() { urls.forEach((url) => URL.revokeObjectURL(url)); urls.clear(); }
-function freeVideoCount() {
-  const saved = Number.parseInt(localStorage.getItem(TRIAL_COUNT_KEY) || '', 10);
-  if (Number.isFinite(saved) && saved >= 0) return Math.min(saved, FREE_VIDEO_LIMIT);
-  if (localStorage.getItem(LEGACY_TRIAL_KEY) === '1') { localStorage.setItem(TRIAL_COUNT_KEY, '1'); return 1; }
-  return 0;
-}
-function freeVideosLeft() { return 999; }
-function canVideo() { return true; }
 function setMessage(text, type = '') { $('message').textContent = text; $('message').className = `message ${type}`; }
 function openModal() { $('payModal').classList.remove('hidden'); document.body.classList.add('locked'); }
 function closeModal() { $('payModal').classList.add('hidden'); document.body.classList.remove('locked'); }
@@ -142,11 +121,11 @@ async function restorePlan() {
 }
 
 function updateVideoUi() {
-  $('videoBadge').textContent = 'Free';
+  $('videoBadge').textContent = planCopy.videoBadge;
   if (state.mode !== 'video') return;
-  $('quotaTitle').textContent = '100% Free Access';
-  $('quotaText').textContent = 'Free video & image cleanup';
-  $('quotaPrice').textContent = '₹0';
+  $('quotaTitle').textContent = planCopy.quotaTitle;
+  $('quotaText').textContent = planCopy.quotaText;
+  $('quotaPrice').textContent = planCopy.quotaPrice;
 }
 
 function clearWorkspace() {
@@ -167,15 +146,14 @@ function switchMode(mode) {
   if (mode === 'image') {
     $('fileInput').accept = 'image/png,image/jpeg,image/webp';
     $('toolTitle').textContent = 'Drop an image'; $('toolSub').textContent = 'PNG, JPG, JPEG or WebP · up to 20 MB';
-    $('dropStrong').textContent = 'Drop image here'; $('dropMeta').textContent = 'Images are free · automatic Gemini watermark detection';
-    $('quotaTitle').textContent = 'Unlimited images'; $('quotaText').textContent = 'Free image cleanup'; $('quotaPrice').textContent = '₹0';
+    $('dropStrong').textContent = 'Drop image here'; $('dropMeta').textContent = 'Automatic Gemini watermark detection · checked on this device';
+    $('quotaTitle').textContent = planCopy.quotaTitle; $('quotaText').textContent = planCopy.quotaText; $('quotaPrice').textContent = planCopy.quotaPrice;
   } else {
-    const left = freeVideosLeft();
     $('fileInput').accept = 'video/mp4,video/webm,video/quicktime';
-    $('toolTitle').textContent = canVideo() ? 'Drop a story / reel video' : 'Unlock more video processing';
-    $('toolSub').textContent = canVideo() ? '1080×1920 portrait recommended · MP4/WebM/MOV' : 'Your 21 free videos have been used';
-    $('dropStrong').textContent = canVideo() ? 'Drop 9:16 video here' : '₹99 plan required';
-    $('dropMeta').textContent = state.paid ? 'Video plan active' : (left > 0 ? `${left} free videos remaining · then ₹99` : '21 free videos used · upgrade to continue');
+    $('toolTitle').textContent = 'Drop a story / reel video';
+    $('toolSub').textContent = '1080×1920 portrait recommended · MP4/WebM/MOV';
+    $('dropStrong').textContent = 'Drop 9:16 video here';
+    $('dropMeta').textContent = 'Checked on this device before anything runs';
     updateVideoUi();
   }
 }
@@ -257,18 +235,15 @@ async function processVideo(engine) {
   state.result = blob;
   $('afterVideo').src = objectUrl(blob);
   $('resultMeta').textContent = profile === 'legacy' ? 'Legacy Veo cleaned' : 'Gemini diamond cleaned';
-  if (!state.paid) localStorage.setItem(TRIAL_COUNT_KEY, String(Math.min(FREE_VIDEO_LIMIT, freeVideoCount() + 1)));
-  const left = freeVideosLeft();
-  setMessage(state.paid ? 'Video cleaned and ready to download.' : (left > 0 ? `Video cleaned. ${left} free video${left === 1 ? '' : 's'} remaining.` : 'Video cleaned. All 21 free videos are used; video 22 requires the ₹99 plan.'), 'success');
+  setMessage('Video cleaned. Check the preview before you download.', 'success');
   updateVideoUi();
 }
 
 async function processCurrent() {
   if (!state.file) return;
-  if (state.mode === 'video' && !canVideo()) { openModal(); return; }
   $('processing').classList.remove('hidden'); $('downloadBtn').disabled = true; resetProgress();
   $('processingSub').textContent = 'On this device';
-  $('processingTitle').textContent = state.mode === 'image' ? 'Detecting & removing watermark…' : (state.paid ? 'Processing video…' : `Processing free video ${Math.min(FREE_VIDEO_LIMIT, freeVideoCount() + 1)} of ${FREE_VIDEO_LIMIT}…`);
+  $('processingTitle').textContent = state.mode === 'image' ? 'Detecting & removing watermark…' : 'Processing video…';
   try {
     const engine = await loadEngine();
     if (!state.file) return;
@@ -284,7 +259,6 @@ async function processCurrent() {
 function selectFile(file) {
   const error = validate(file);
   if (error) { setMessage(error, 'error'); return; }
-  if (state.mode === 'video' && !canVideo()) { openModal(); return; }
   showFile(file);
 }
 
@@ -303,7 +277,8 @@ $('downloadBtn').onclick = () => {
   a.download = state.mode === 'image' ? 'geminiwatermark-clean.png' : 'geminiwatermark-clean.mp4';
   document.body.appendChild(a); a.click(); a.remove();
 };
-$('buyPlan').onclick = openModal; $('closeModal').onclick = closeModal; $('payModal').onclick = (event) => { if (event.target === $('payModal')) closeModal(); };
+if ($('buyPlan')) $('buyPlan').onclick = openModal;
+$('closeModal').onclick = closeModal; $('payModal').onclick = (event) => { if (event.target === $('payModal')) closeModal(); };
 
 async function verifyOrder(orderId) {
   $('checkoutMsg').textContent = 'Verifying payment…';
@@ -325,7 +300,7 @@ $('payBtn').onclick = async () => {
     if (result?.error) throw new Error(result.error.message || 'Checkout did not complete.');
     await verifyOrder(order.orderId);
   } catch (error) { $('checkoutMsg').textContent = error.message || 'Payment could not start.'; }
-  finally { button.disabled = false; button.textContent = 'Pay ₹99 with Cashfree'; }
+  finally { button.disabled = false; button.textContent = 'Verify order'; }
 };
 
 const returnedOrder = new URLSearchParams(location.search).get('cf_order_id');

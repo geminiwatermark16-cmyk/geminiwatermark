@@ -15,14 +15,13 @@
         <b>Simple pricing. Familiar checkout. Real support.</b>
       </div>
       <div class="gwIndiaGrid">
-        <div><strong>100% Free</strong><small>Unlimited video & image</small></div>
-        <div><strong>₹0</strong><small>Zero cost forever</small></div>
+        <div><strong>Free</strong><small>Image &amp; video cleanup</small></div>
+        <div><strong>No account</strong><small>Nothing to sign up for</small></div>
         <div><strong>Local</strong><small>Browser processing</small></div>
         <div><strong>Hindi + English</strong><small>Support available</small></div>
       </div>
       <div class="gwIndiaBadges" aria-label="India service highlights">
-        <span>✓ No automatic renewal</span>
-        <span>✓ Payment verified on server</span>
+        <span>✓ No subscription</span>
         <span>✓ Privacy policy published</span>
         <span>✓ Refund policy published</span>
         <span>✓ Live chat support</span>
@@ -54,7 +53,7 @@
   }
 })();
 
-// Keep the ₹99 Cashfree checkout reachable from both video experiences even
+// Keep the legacy Cashfree order-restore path reachable from both video views even
 // while free video trial credits remain. This version is deliberately careful
 // not to mutate watched DOM nodes repeatedly, which previously created a
 // MutationObserver feedback loop and froze all page clicks.

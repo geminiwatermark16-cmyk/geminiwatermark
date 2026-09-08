@@ -7,17 +7,17 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .gwSocialProof{max-width:1080px;margin:28px auto 0;padding:24px;border:1px solid #1e2235;border-radius:22px;background:#12141e;text-align:left;box-shadow:0 14px 34px rgba(0,0,0,.4);color:#fff}
+      .gwSocialProof{max-width:1080px;margin:28px auto 0;padding:24px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);text-align:left;box-shadow:var(--shadow-card);color:var(--ink)}
       .gwProofHead{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
       .gwProofKicker{display:block;font-size:10px;letter-spacing:.14em;font-weight:800;color:#10b981;margin-bottom:6px}
       .gwProofHead h2{margin:0;font:700 clamp(23px,3vw,34px)/1.05 'Manrope',sans-serif;letter-spacing:-.035em;color:#fff}.gwProofHead h2 span{color:#00f2fe}
       .gwProofHead p{margin:0;max-width:330px;font-size:12px;line-height:1.55;color:#94a3b8}
       .gwProofStats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-      .gwProofStat{padding:16px;border:1px solid #1e2235;background:#0d0f17;border-radius:15px}.gwProofStat strong{display:block;font-size:24px;line-height:1;color:#fff;letter-spacing:-.04em}.gwProofStat span{display:block;margin-top:6px;font-size:11px;line-height:1.4;color:#94a3b8}
+      .gwProofStat{padding:16px;border:1px solid var(--border);background:var(--surface-sunken);border-radius:var(--radius-sm)}.gwProofStat strong{display:block;font-size:22px;line-height:1.1;color:var(--ink);letter-spacing:-.02em}.gwProofStat span{display:block;margin-top:6px;font-size:12px;line-height:1.4;color:var(--muted)}
       .gwFeedbackWrap{margin-top:20px;padding-top:20px;border-top:1px solid #1e2235}.gwFeedbackWrap h3{margin:0 0 12px;font-size:13px;color:#fff;font-weight:700}.gwFeedbackGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-      .gwFeedbackCard{position:relative;margin:0;overflow:hidden;border:1px solid #1e2235;border-radius:14px;background:#0d0f17;aspect-ratio:3/4;padding:14px;display:flex;flex-direction:column;justify-content:space-between}
+      .gwFeedbackCard{position:relative;margin:0;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-sunken);aspect-ratio:3/4;padding:14px;display:flex;flex-direction:column;justify-content:space-between}
       .gwFeedbackCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-      .gwSampleTag{display:inline-flex;align-items:center;width:max-content;padding:4px 8px;border-radius:999px;background:#1e2235;color:#10b981;font-size:8px;font-weight:900;letter-spacing:.1em}
+      .gwSampleTag{display:inline-flex;align-items:center;width:max-content;padding:4px 8px;border-radius:999px;background:var(--tint);color:var(--primary);font-size:8px;font-weight:900;letter-spacing:.1em}
       .gwSampleAvatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(16,185,129,0.15);color:#10b981;font-size:12px;font-weight:900;margin-top:8px}
       .gwSampleStars{font-size:11px;letter-spacing:1px;margin:8px 0 6px;color:#facc15}.gwSampleText{font-size:11px;line-height:1.5;color:#cbd5e1;margin:0}.gwSampleName{font-size:10px;color:#64748b;margin-top:8px}
       .gwProofNote{margin:11px 0 0!important;font-size:10px!important;line-height:1.45!important;color:#64748b!important}
@@ -74,8 +74,8 @@
       </div>
       <div class="gwProofStats">
         <div class="gwProofStat"><strong>500+</strong><span>creators have chosen GeminiWatermark</span></div>
-        <div class="gwProofStat"><strong>Upload first</strong><span>confirm your video loads before paid processing</span></div>
-        <div class="gwProofStat"><strong>30 days</strong><span>video access with no automatic renewal</span></div>
+        <div class="gwProofStat"><strong>Check first</strong><span>your file is validated before anything runs</span></div>
+        <div class="gwProofStat"><strong>No account</strong><span>free to use, nothing to sign up for</span></div>
       </div>
       <div class="gwFeedbackWrap" id="gwFeedbackWrap">
         <h3>Creator feedback layout</h3>
