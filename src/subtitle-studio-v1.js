@@ -1,5 +1,5 @@
 (() => {
-  const CSS_HREF = '/src/subtitle-studio.css?v=20260908-v17';
+  const CSS_HREF = '/src/subtitle-studio.css?v=20260909-v18';
 
   function ensureStyles() {
     if (!document.querySelector(`link[href*="Noto+Sans+Devanagari"]`)) {
@@ -15,7 +15,27 @@
     document.head.appendChild(link);
   }
 
-  // State
+  // AutoCap Presets List (16 complete preset card styles matching AutoCap.in)
+  const AUTOCAP_PRESETS = [
+    { id: 'viral', name: 'Viral Reel', badge: 'VIRAL', sample: 'VIRAL REEL 🔥', font: 'Montserrat', activeColor1: '#00f2fe', activeColor2: '#ffeb3b' },
+    { id: 'hormozi', name: 'Hormozi Pop', badge: 'TRENDING', sample: 'HORMOZI POP', font: 'Montserrat', activeColor1: '#ffe600', activeColor2: '#000000' },
+    { id: 'cinematic', name: 'Cinematic', badge: 'PROFESSIONAL', sample: 'CINEMATIC 🎬', font: 'Montserrat', activeColor1: '#d4af37', activeColor2: '#ffffff' },
+    { id: 'casual', name: 'Casual Tag', badge: 'SIMPLE', sample: 'Casual Subtitle', font: 'Poppins', activeColor1: '#38bdf8', activeColor2: '#ffffff' },
+    { id: 'bold-pop', name: 'Bold Pop', badge: 'PUNCHY', sample: 'BOLD POP!', font: 'Montserrat', activeColor1: '#ff0055', activeColor2: '#ffeb3b' },
+    { id: 'clean-minimal', name: 'Clean Minimal', badge: 'CLASSIC', sample: 'Clean Minimal', font: 'Montserrat', activeColor1: '#ffffff', activeColor2: '#94a3b8' },
+    { id: 'fire', name: 'Fire Glow', badge: 'ENERGY', sample: 'FIRE GLOW 🔥', font: 'Montserrat', activeColor1: '#ff4500', activeColor2: '#ffcc00' },
+    { id: 'word-glow', name: 'Word Glow', badge: 'NEON', sample: 'WORD GLOW', font: 'Montserrat', activeColor1: '#00f6ff', activeColor2: '#ff007f' },
+    { id: 'shorts', name: 'Shorts Tag', badge: 'KARAOKE', sample: 'Shorts Clip 📱', font: 'Poppins', activeColor1: '#a855f7', activeColor2: '#38bdf8' },
+    { id: 'street-bold', name: 'Street Bold', badge: 'PUNCHY', sample: 'STREET BOLD', font: 'Montserrat', activeColor1: '#facc15', activeColor2: '#ef4444' },
+    { id: 'plain', name: 'Plain Sub', badge: 'SIMPLE', sample: 'Plain Subtitle', font: 'Poppins', activeColor1: '#ffffff', activeColor2: '#cccccc' },
+    { id: 'word-pop', name: 'Word Pop', badge: 'VIRAL', sample: 'Word Pop 🎈', font: 'Montserrat', activeColor1: '#3b82f6', activeColor2: '#10b981' },
+    { id: 'word-drop', name: 'Word Drop', badge: 'ENERGY', sample: 'Word Drop 💧', font: 'Montserrat', activeColor1: '#ff3333', activeColor2: '#ffcc00' },
+    { id: 'word-fill', name: 'Word Fill', badge: 'VIBRANT', sample: 'Word Fill 🖍️', font: 'Montserrat', activeColor1: '#00ff04', activeColor2: '#ffffff' },
+    { id: 'neon', name: 'Cyber Neon', badge: 'NEON', sample: 'CYBER NEON 🌟', font: 'Montserrat', activeColor1: '#ff007f', activeColor2: '#00f2fe' },
+    { id: 'minimal', name: 'Minimal Dark', badge: 'CLASSIC', sample: 'Minimal Dark', font: 'Montserrat', activeColor1: '#38bdf8', activeColor2: '#ffffff' }
+  ];
+
+  // Studio State
   let videoFile = null;
   let cues = [
     {
@@ -55,6 +75,18 @@
   let isKaraokeActive = true;
   let currentPos = 'bottom';
   let currentSize = 24;
+  let subtitlePosPercent = 85; // 85% vertical height position
+  let isDraggingPosHandle = false;
+  let scriptMode = 'roman';
+
+  let customColors = {
+    activeColor1: '#00f2fe',
+    activeColor2: '#ffeb3b',
+    fontColor: '#ffffff',
+    strokeColor: '#000000',
+    strokeWidth: 5
+  };
+
   let activeAudioContext = null;
   let activeMediaSourceNode = null;
   let isTranscribing = false;
@@ -91,7 +123,6 @@
     return `${m}:${s.toString().padStart(2, '0')}.${ms}`;
   }
 
-  // Generate synced cues matching video duration & language
   function generateDefaultCues(duration, lang = 'hi-IN') {
     const dur = Math.max(3, Number(duration) || 12);
     const step = 1.5;
@@ -140,7 +171,6 @@
     return newCues;
   }
 
-  // Parse .SRT and .VTT format
   function parseSubtitles(text) {
     const lines = text.split(/\r?\n/);
     const result = [];
@@ -197,7 +227,6 @@
     return result;
   }
 
-  // Pure JavaScript 16-bit PCM WAV Encoder
   function encodeWav(samples, sampleRate) {
     const buffer = new ArrayBuffer(44 + samples.length * 2);
     const view = new DataView(buffer);
@@ -214,7 +243,7 @@
     writeString(view, 12, 'fmt ');
     view.setUint32(16, 16, true);
     view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true); // Mono
+    view.setUint16(22, 1, true);
     view.setUint32(24, sampleRate, true);
     view.setUint32(28, sampleRate * 2, true);
     view.setUint16(32, 2, true);
@@ -325,7 +354,6 @@
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioCtx();
 
-    // 1. In-memory Web Audio decodeAudioData (fastest PCM WAV)
     try {
       const arrayBuffer = await file.arrayBuffer();
       const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
@@ -345,13 +373,11 @@
       console.warn('decodeAudioData failed, checking fallbacks:', err);
     }
 
-    // 2. Direct media container fallback for files <= 3.2MB
     if (file.size <= 3.2 * 1024 * 1024) {
       const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
       return { blob: file, format: ext === 'mov' ? 'mp4' : ext };
     }
 
-    // 3. MediaElement Audio Stream Recorder fallback
     try {
       return await extractAudioViaMediaElement(file);
     } catch (err2) {
@@ -361,17 +387,14 @@
     throw new Error('Could not extract audio track from this video. You can use "Instant Auto-Timeline" or "Paste Text".');
   }
 
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = String(reader.result || '');
-        const base64 = dataUrl.split(',')[1] || '';
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+  function applyCustomizerCSS() {
+    const container = document.getElementById('gwSubVideoContainer');
+    if (!container) return;
+    container.style.setProperty('--gw-active-color1', customColors.activeColor1);
+    container.style.setProperty('--gw-active-color2', customColors.activeColor2);
+    container.style.setProperty('--gw-font-color', customColors.fontColor);
+    container.style.setProperty('--gw-stroke-color', customColors.strokeColor);
+    container.style.setProperty('--gw-stroke-width', customColors.strokeWidth + 'px');
   }
 
   function initSubtitleStudio() {
@@ -386,7 +409,7 @@
     const subTab = document.createElement('button');
     subTab.id = 'subtitlesTab';
     subTab.type = 'button';
-    subTab.innerHTML = 'Auto Subtitles <b>New</b>';
+    subTab.innerHTML = 'Auto Subtitles <b>AutoCap</b>';
     tabs.appendChild(subTab);
 
     // Create Studio Panel
@@ -399,8 +422,11 @@
         <div class="gw-sub-preview-wrap">
           <div class="gw-sub-video-container" id="gwSubVideoContainer">
             <video id="gwSubVideo" playsinline preload="metadata"></video>
-            <div id="gwSubOverlay" class="gw-sub-overlay pos-bottom">
-              <span id="gwSubText" class="gw-sub-text gw-style-viral" style="font-size: ${currentSize}px;">SAMPLE CAPTION</span>
+            <div id="gwSubOverlay" class="gw-sub-overlay" style="top: ${subtitlePosPercent}%;">
+              <div id="gwDragPositionHandle" class="gw-drag-position-handle" title="Drag to adjust caption vertical position">
+                ↕ Drag to position captions
+              </div>
+              <span id="gwSubText" class="gw-sub-text gw-style-${currentStyle}" style="font-size: ${currentSize}px;">SAMPLE CAPTION</span>
             </div>
           </div>
           <div style="padding: 14px; background: #fff; border-top: 1px solid #eee;">
@@ -430,43 +456,115 @@
 
           <!-- Auto Transcription & Generation -->
           <div class="gw-sub-section">
-            <h4>2. AI Voice Transcription & Subtitles</h4>
+            <h4>2. AI Voice Transcription & Indian Languages</h4>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <select id="gwSubLang" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:12px;">
+              <select id="gwSubLang" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-weight:700;">
                 <option value="hi-IN">Hindi (हिंदी)</option>
+                <option value="hi-Latn">Hinglish / Roman Hindi (हिन्दी)</option>
+                <option value="en-US">English (US/Global)</option>
                 <option value="en-IN">English (India)</option>
-                <option value="en-US">English (US)</option>
-                <option value="es-ES">Spanish</option>
+                <option value="bn-IN">Bengali (বাংলা)</option>
+                <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                <option value="ml-IN">Malayalam (മലയാളം)</option>
+                <option value="mr-IN">Marathi (मराठी)</option>
+                <option value="or-IN">Odia (ଓଡ଼ିଆ)</option>
+                <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
+                <option value="ta-IN">Tamil (தமிழ்)</option>
+                <option value="te-IN">Telugu (తెలుగు)</option>
+                <option value="ur-IN">Urdu (اردو)</option>
               </select>
-              <button id="gwWhisperAiBtn" class="gw-sub-btn magic" type="button">🤖 Whisper AI (Accurate Voice)</button>
+              <select id="gwScriptModeSelect" style="padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:12px;">
+                <option value="roman">Roman / Hinglish Script</option>
+                <option value="native">Native Regional Script</option>
+                <option value="english">English Translation</option>
+              </select>
+              <button id="gwWhisperAiBtn" class="gw-sub-btn magic" type="button">🤖 Whisper AI (Exact Voice)</button>
               <button id="gwAutoGenerateTimelineBtn" class="gw-sub-btn primary" type="button">⚡ Instant Auto-Timeline</button>
               <button id="gwPasteScriptBtn" class="gw-sub-btn secondary" type="button">📝 Paste Text / Script</button>
               <button id="gwAutoTranscribeBtn" class="gw-sub-btn secondary" type="button">🎙️ Mic Transcribe</button>
               <button id="gwUploadSrtBtn" class="gw-sub-btn secondary" type="button">📁 Upload .SRT</button>
               <input type="file" id="gwSrtFileInput" accept=".srt,.vtt" hidden>
             </div>
-            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Click "Whisper AI" for exact voice words, or "Instant Auto-Timeline" / "Paste Text".</p>
+            <p id="gwTranscribeStatus" style="margin:8px 0 0; font-size:11px; color:#666;">Select language & click "Whisper AI" for exact voice words or "Instant Auto-Timeline".</p>
           </div>
 
-          <!-- Subtitle Styling Presets -->
+          <!-- Subtitle Styling Presets & Customizer -->
           <div class="gw-sub-section">
-            <h4>3. Viral Subtitle Styles</h4>
-            <div class="gw-preset-buttons">
-              <button type="button" class="gw-preset-btn active" data-style="viral">⚡ Viral Reel</button>
-              <button type="button" class="gw-preset-btn" data-style="hormozi">🔥 Hormozi</button>
-              <button type="button" class="gw-preset-btn" data-style="neon">🌟 Neon</button>
-              <button type="button" class="gw-preset-btn" data-style="gradient">🌈 Gradient</button>
-              <button type="button" class="gw-preset-btn" data-style="minimal">✦ Minimal</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h4 style="margin:0;">3. AutoCap Preset Gallery (16 Styles)</h4>
+              <label style="font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                <input type="checkbox" id="gwKaraokeToggle" checked style="accent-color:#10b981; cursor:pointer;"> 🎤 Word Karaoke
+              </label>
             </div>
 
-            <!-- Animation Presets & Karaoke Word Highlight -->
-            <div style="margin-top:14px; border-top:1px solid #e7e8e2; padding-top:12px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:12px; font-weight:800; color:#111;">Animation Effect:</span>
-                <label style="font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:5px; cursor:pointer;">
-                  <input type="checkbox" id="gwKaraokeToggle" checked style="accent-color:#10b981; cursor:pointer;"> 🎤 Word Karaoke
-                </label>
+            <!-- AutoCap Cards Gallery Grid -->
+            <div class="gw-preset-gallery" id="gwPresetGallery">
+              ${AUTOCAP_PRESETS.map(p => `
+                <div class="gw-style-card ${p.id === currentStyle ? 'active' : ''}" data-style="${p.id}">
+                  <div class="gw-card-preview gw-style-${p.id}">
+                    <span class="gw-word active-word" style="font-size:12px;">${p.sample}</span>
+                  </div>
+                  <div class="gw-card-footer">
+                    <span class="gw-card-title">${p.name}</span>
+                    <span class="gw-card-badge ${p.badge.toLowerCase()}">${p.badge}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- AutoCap Customizer Panel -->
+            <div class="gw-customizer-panel">
+              <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🎨 Preset Color Customizer</span>
+                <button type="button" id="gwResetCustomizerBtn" style="background:none; border:none; font-size:11px; color:#2563eb; font-weight:700; cursor:pointer;">Reset Defaults</button>
               </div>
+
+              <div class="gw-custom-row">
+                <span class="gw-custom-label">Highlight Colors:</span>
+                <div class="gw-color-picker-group">
+                  <label class="gw-color-input-badge">
+                    <span class="gw-color-swatch" id="gwColor1Swatch" style="background:${customColors.activeColor1};">
+                      <input type="color" id="gwColor1Input" value="${customColors.activeColor1}">
+                    </span>
+                    <span id="gwColor1Hex">${customColors.activeColor1}</span>
+                  </label>
+                  <label class="gw-color-input-badge">
+                    <span class="gw-color-swatch" id="gwColor2Swatch" style="background:${customColors.activeColor2};">
+                      <input type="color" id="gwColor2Input" value="${customColors.activeColor2}">
+                    </span>
+                    <span id="gwColor2Hex">${customColors.activeColor2}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="gw-custom-row">
+                <span class="gw-custom-label">Text & Stroke:</span>
+                <div class="gw-color-picker-group">
+                  <label class="gw-color-input-badge">
+                    <span class="gw-color-swatch" id="gwFontColorSwatch" style="background:${customColors.fontColor};">
+                      <input type="color" id="gwFontColorInput" value="${customColors.fontColor}">
+                    </span>
+                    Font
+                  </label>
+                  <label class="gw-color-input-badge">
+                    <span class="gw-color-swatch" id="gwStrokeColorSwatch" style="background:${customColors.strokeColor};">
+                      <input type="color" id="gwStrokeColorInput" value="${customColors.strokeColor}">
+                    </span>
+                    Stroke
+                  </label>
+                </div>
+              </div>
+
+              <div class="gw-custom-row">
+                <span class="gw-custom-label">Stroke Width:</span>
+                <input type="range" id="gwStrokeWidthSlider" min="0" max="12" value="${customColors.strokeWidth}" style="width:140px;">
+              </div>
+            </div>
+
+            <!-- Animation Presets -->
+            <div style="margin-top:14px; border-top:1px solid #e7e8e2; padding-top:12px;">
+              <span style="font-size:12px; font-weight:800; color:#111;">Animation Effect:</span>
               <div class="gw-anim-buttons">
                 <button type="button" class="gw-anim-btn active" data-anim="bounce">💥 CapCut Bounce</button>
                 <button type="button" class="gw-anim-btn" data-anim="slide">🌊 Slide Up</button>
@@ -476,11 +574,12 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
-              <span style="font-size:12px; font-weight:700; color:#444;">Position:</span>
-              <div style="display:flex; gap:6px;">
+              <span style="font-size:12px; font-weight:700; color:#444;">Position & Height:</span>
+              <div style="display:flex; gap:6px; align-items:center;">
                 <button type="button" class="gw-pos-btn gw-sub-btn secondary" data-pos="bottom" style="padding:4px 10px; font-size:11px;">Bottom</button>
                 <button type="button" class="gw-pos-btn gw-sub-btn secondary" data-pos="middle" style="padding:4px 10px; font-size:11px;">Center</button>
                 <button type="button" class="gw-pos-btn gw-sub-btn secondary" data-pos="top" style="padding:4px 10px; font-size:11px;">Top</button>
+                <input type="range" id="gwPosHeightSlider" min="10" max="92" value="${subtitlePosPercent}" style="width:70px;" title="Fine vertical height %">
               </div>
             </div>
 
@@ -516,245 +615,236 @@
           </div>
         </div>
       </div>
-
-      <!-- API Key Modal -->
-      <div id="gwKeyModal" class="gw-sub-modal hidden">
-        <div class="gw-sub-modal-card">
-          <h3>
-            <span>🤖 Connect Whisper AI</span>
-            <button id="gwCloseKeyModal" type="button" style="border:none; background:none; font-size:24px; cursor:pointer;">×</button>
-          </h3>
-          <p>To transcribe the video's voice cleanly with AI (no mic needed), enter your API key (100% free at <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:#6366f1; font-weight:700;">console.groq.com/keys</a>, Google AI Studio, or OpenAI). Saved locally in your browser only.</p>
-          <input id="gwApiKeyInput" type="password" placeholder="Enter Groq (gsk_...), Gemini (AIza...) or OpenAI (sk-...) Key" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:10px; font-family:monospace; box-sizing:border-box;">
-          <div class="gw-sub-modal-actions">
-            <button id="gwCancelKeyBtn" type="button" class="gw-sub-btn secondary">Cancel</button>
-            <button id="gwSaveKeyBtn" type="button" class="gw-sub-btn magic">Save & Transcribe Voice</button>
-          </div>
-        </div>
-      </div>
     `;
 
     if (singleWorkspace) {
-      singleWorkspace.parentNode.insertBefore(panel, singleWorkspace.nextSibling);
+      singleWorkspace.appendChild(panel);
     } else {
       tool.appendChild(panel);
     }
-
-    // Tab Navigation
-    function selectSubtitlesTab() {
-      subTab.classList.add('active');
-      panel.classList.add('active');
-      panel.style.display = 'block';
-    }
-
-    function hideSubtitlesTab() {
-      subTab.classList.remove('active');
-      panel.classList.remove('active');
-      panel.style.display = 'none';
-      try {
-        const vid = document.getElementById('gwSubVideo');
-        if (vid) vid.pause();
-      } catch {}
-    }
-
-    window.__GW_SHOW_SUBTITLES__ = selectSubtitlesTab;
-    window.__GW_HIDE_SUBTITLES__ = hideSubtitlesTab;
-
-    subTab.addEventListener('click', selectSubtitlesTab);
 
     // Elements
     const video = document.getElementById('gwSubVideo');
     const overlay = document.getElementById('gwSubOverlay');
     const subText = document.getElementById('gwSubText');
+    const dragHandle = document.getElementById('gwDragPositionHandle');
+    const videoContainer = document.getElementById('gwSubVideoContainer');
     const cueList = document.getElementById('gwCueList');
-    const fileInput = document.getElementById('gwSubFileInput');
-    const fileMeta = document.getElementById('gwSubFileMeta');
+    const subFileInput = document.getElementById('gwSubFileInput');
     const useCleanedBtn = document.getElementById('gwUseCleanedVideoBtn');
+    const subFileMeta = document.getElementById('gwSubFileMeta');
+
+    const subLangSelect = document.getElementById('gwSubLang');
+    const scriptModeSelect = document.getElementById('gwScriptModeSelect');
     const whisperAiBtn = document.getElementById('gwWhisperAiBtn');
-    const transcribeBtn = document.getElementById('gwAutoTranscribeBtn');
     const autoGenBtn = document.getElementById('gwAutoGenerateTimelineBtn');
+    const autoTranscribeBtn = document.getElementById('gwAutoTranscribeBtn');
     const transcribeStatus = document.getElementById('gwTranscribeStatus');
+
     const pasteScriptBtn = document.getElementById('gwPasteScriptBtn');
-    const uploadSrtBtn = document.getElementById('gwUploadSrtBtn');
-    const srtFileInput = document.getElementById('gwSrtFileInput');
     const pasteModal = document.getElementById('gwPasteModal');
     const closePasteBtn = document.getElementById('gwClosePasteModal');
     const cancelPasteBtn = document.getElementById('gwCancelPasteBtn');
     const applyPasteBtn = document.getElementById('gwApplyPasteBtn');
     const scriptText = document.getElementById('gwScriptText');
 
-    const keyModal = document.getElementById('gwKeyModal');
-    const closeKeyBtn = document.getElementById('gwCloseKeyModal');
-    const cancelKeyBtn = document.getElementById('gwCancelKeyBtn');
-    const saveKeyBtn = document.getElementById('gwSaveKeyBtn');
-    const apiKeyInput = document.getElementById('gwApiKeyInput');
+    const uploadSrtBtn = document.getElementById('gwUploadSrtBtn');
+    const srtFileInput = document.getElementById('gwSrtFileInput');
 
-    // Video Loading
-    function loadVideo(file) {
-      videoFile = file;
-      video.src = URL.createObjectURL(file);
-      fileMeta.textContent = `Loaded: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-      video.load();
+    // Color customizer elements
+    const color1Input = document.getElementById('gwColor1Input');
+    const color2Input = document.getElementById('gwColor2Input');
+    const fontColorInput = document.getElementById('gwFontColorInput');
+    const strokeColorInput = document.getElementById('gwStrokeColorInput');
+    const strokeWidthSlider = document.getElementById('gwStrokeWidthSlider');
+    const posHeightSlider = document.getElementById('gwPosHeightSlider');
+    const resetCustomizerBtn = document.getElementById('gwResetCustomizerBtn');
 
-      video.onloadedmetadata = () => {
-        const dur = video.duration || 12;
-        const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
-        cues = generateDefaultCues(dur, lang);
-        renderCues();
-        updateActiveSubtitle();
-        transcribeStatus.innerHTML = `🎬 <b>Video loaded (${Math.round(dur)}s)!</b> Automatically starting Whisper AI voice transcription…`;
-        // Auto-trigger Whisper AI so subtitles appear automatically from the video voice
-        setTimeout(() => {
-          if (videoFile && whisperAiBtn && !whisperAiBtn.disabled) {
-            whisperAiBtn.click();
-          }
-        }, 400);
-      };
+    applyCustomizerCSS();
+
+    function selectSubtitlesTab() {
+      document.querySelectorAll('#tool .tabs button').forEach(b => b.classList.remove('active'));
+      subTab.classList.add('active');
+
+      const siblings = Array.from(tool.children).filter(el => el.id !== 'subtitlesPanel' && el.className !== 'tabs');
+      siblings.forEach(el => el.style.display = 'none');
+      if (singleWorkspace) {
+        Array.from(singleWorkspace.children).forEach(el => {
+          if (el.id !== 'subtitlesPanel') el.style.display = 'none';
+        });
+      }
+      panel.style.display = 'block';
     }
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files?.[0]) loadVideo(fileInput.files[0]);
-    });
+    subTab.onclick = selectSubtitlesTab;
 
-    // Check if cleaned video is available from remover
     function checkCleanedVideo() {
-      const afterVideo = document.getElementById('afterVideo');
-      if (afterVideo?.src && afterVideo.src.startsWith('blob:')) {
-        useCleanedBtn.style.display = 'inline-flex';
-        useCleanedBtn.onclick = async () => {
-          const res = await fetch(afterVideo.src);
-          const blob = await res.blob();
-          const file = new File([blob], 'cleaned-video.mp4', { type: blob.type || 'video/mp4' });
-          loadVideo(file);
+      const activeVideo = document.querySelector('#workspace video, #tool video');
+      if (activeVideo && activeVideo.id !== 'gwSubVideo' && activeVideo.src) {
+        useCleanedBtn.style.display = 'inline-block';
+        useCleanedBtn.onclick = () => {
+          fetch(activeVideo.src)
+            .then(res => res.blob())
+            .then(blob => {
+              videoFile = new File([blob], 'cleaned-video.mp4', { type: 'video/mp4' });
+              video.src = URL.createObjectURL(blob);
+              subFileMeta.textContent = `Using Cleaned Video: cleaned-video.mp4`;
+              video.onloadedmetadata = () => {
+                cues = generateDefaultCues(video.duration, subLangSelect.value);
+                renderCues();
+                updateActiveSubtitle();
+              };
+            });
         };
       }
     }
     checkCleanedVideo();
 
-    // Render Cue List
+    subFileInput.onchange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      videoFile = file;
+      subFileMeta.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+      video.src = URL.createObjectURL(file);
+      video.onloadedmetadata = () => {
+        cues = generateDefaultCues(video.duration, subLangSelect.value);
+        renderCues();
+        updateActiveSubtitle();
+      };
+    };
+
     function renderCues() {
       cueList.innerHTML = '';
-      cues.forEach((cue, idx) => {
-        const row = document.createElement('div');
-        row.className = 'gw-cue-item';
-        row.innerHTML = `
-          <span class="gw-cue-time" title="Click to jump">${formatTime(cue.start)} - ${formatTime(cue.end)}</span>
-          <input class="gw-cue-input" type="text" value="${cue.text}" placeholder="Enter caption...">
-          <button class="gw-cue-del" type="button" title="Delete line">×</button>
+      cues.forEach((cue, index) => {
+        const item = document.createElement('div');
+        item.className = 'gw-cue-item';
+        item.innerHTML = `
+          <div class="gw-cue-header">
+            <span class="gw-cue-time">#${index + 1} (${cue.start.toFixed(1)}s - ${cue.end.toFixed(1)}s)</span>
+            <div class="gw-cue-actions">
+              <button type="button" class="gw-sub-btn secondary" data-action="split" data-index="${index}" style="padding:2px 6px; font-size:10px;">✂️ Split</button>
+              <button type="button" class="gw-sub-btn secondary" data-action="del" data-index="${index}" style="padding:2px 6px; font-size:10px; color:#ef4444;">🗑️</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-bottom:6px;">
+            <input type="number" step="0.1" value="${cue.start}" data-index="${index}" data-field="start" style="width:65px; padding:3px 6px; font-size:11px; border:1px solid #ddd; border-radius:4px;">
+            <span style="align-self:center; font-size:11px;">to</span>
+            <input type="number" step="0.1" value="${cue.end}" data-index="${index}" data-field="end" style="width:65px; padding:3px 6px; font-size:11px; border:1px solid #ddd; border-radius:4px;">
+          </div>
+          <input type="text" class="gw-cue-input" value="${escapeHtml(cue.text)}" data-index="${index}" data-field="text">
         `;
+        cueList.appendChild(item);
+      });
 
-        row.querySelector('.gw-cue-time').onclick = () => {
-          video.currentTime = cue.start;
-          video.play().catch(() => {});
-        };
-
-        row.querySelector('.gw-cue-input').oninput = (e) => {
-          cue.text = e.target.value;
+      cueList.querySelectorAll('input').forEach(input => {
+        input.oninput = (e) => {
+          const idx = parseInt(e.target.dataset.index, 10);
+          const field = e.target.dataset.field;
+          const val = e.target.value;
+          if (field === 'start') cues[idx].start = parseFloat(val) || 0;
+          else if (field === 'end') cues[idx].end = parseFloat(val) || 0;
+          else if (field === 'text') {
+            cues[idx].text = val;
+            cues[idx].words = []; // Recalculate words
+          }
+          lastActiveCue = null;
           updateActiveSubtitle();
         };
+      });
 
-        row.querySelector('.gw-cue-del').onclick = () => {
-          cues.splice(idx, 1);
-          renderCues();
-          updateActiveSubtitle();
+      cueList.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.onclick = (e) => {
+          const idx = parseInt(btn.dataset.index, 10);
+          const action = btn.dataset.action;
+          if (action === 'del') {
+            cues.splice(idx, 1);
+            renderCues();
+            updateActiveSubtitle();
+          } else if (action === 'split') {
+            const cue = cues[idx];
+            const mid = Number(((cue.start + cue.end) / 2).toFixed(1));
+            const words = (cue.text || '').split(/\s+/);
+            const half = Math.ceil(words.length / 2);
+            const text1 = words.slice(0, half).join(' ');
+            const text2 = words.slice(half).join(' ');
+
+            cues.splice(idx, 1,
+              { start: cue.start, end: mid, text: text1 },
+              { start: mid, end: cue.end, text: text2 }
+            );
+            renderCues();
+            updateActiveSubtitle();
+          }
         };
-
-        cueList.appendChild(row);
       });
     }
 
     document.getElementById('gwAddCueBtn').onclick = () => {
-      const lastEnd = cues.length > 0 ? cues[cues.length - 1].end : 0;
-      cues.push({ start: Number(lastEnd.toFixed(1)), end: Number((lastEnd + 3.0).toFixed(1)), text: "NEW SUBTITLE" });
+      const last = cues[cues.length - 1];
+      const start = last ? Number((last.end + 0.1).toFixed(1)) : 0.0;
+      const end = Number((start + 2.0).toFixed(1));
+      cues.push({ start, end, text: "NEW SUBTITLE LINE" });
       renderCues();
+      updateActiveSubtitle();
     };
 
-    // Frame-Accurate Synced Subtitle Playback (60 FPS loop)
-    let lastActiveCue = null;
     let animLoopId = null;
+    let lastActiveCue = null;
 
     function updateSamplePreview() {
-      if (video.src && videoFile) return;
-      subText.className = `gw-sub-text gw-style-${currentStyle}`;
-      if (currentAnim) {
-        void subText.offsetWidth;
-        subText.classList.add(`gw-anim-${currentAnim}`);
+      if (video.paused && !cues.length) {
+        subText.style.display = 'inline-block';
+        subText.innerHTML = `<span class="gw-word active-word">SAMPLE CAPTION</span>`;
       }
-      if (isKaraokeActive) {
-        subText.innerHTML = `<span class="gw-word active-word">AI</span> <span class="gw-word future-word">CAPTIONS</span> 🔥`;
-      } else {
-        subText.textContent = 'AI CAPTIONS 🔥';
-      }
-      subText.style.display = 'inline-block';
     }
 
     function updateActiveSubtitle() {
-      if (!video.src || !videoFile) {
-        updateSamplePreview();
-        return;
-      }
-      const t = video.currentTime;
-      let active = null;
-      for (let i = 0; i < cues.length; i++) {
-        const c = cues[i];
-        const isLast = (i === cues.length - 1);
-        if (t >= c.start && (isLast ? t <= c.end : t < c.end)) {
-          active = c;
-          break;
-        }
-      }
+      const t = video.currentTime || 0;
+      overlay.style.top = `${subtitlePosPercent}%`;
+
+      const active = cues.find(c => t >= c.start && (c === cues[cues.length - 1] ? t <= c.end : t < c.end));
 
       if (active && active.text.trim()) {
         subText.style.display = 'inline-block';
+        subText.className = `gw-sub-text gw-style-${currentStyle} gw-anim-${currentAnim}`;
 
-        // When cue changes, re-render and trigger entrance animation
         if (lastActiveCue !== active) {
           lastActiveCue = active;
-          subText.className = `gw-sub-text gw-style-${currentStyle}`;
-          if (currentAnim) {
-            void subText.offsetWidth; // force DOM reflow to restart animation keyframe cleanly
-            subText.classList.add(`gw-anim-${currentAnim}`);
-          }
 
           if (isKaraokeActive) {
             const words = getCueWords(active);
-            subText.innerHTML = words.map(w =>
-              `<span class="gw-word future-word" data-start="${w.start}" data-end="${w.end}">${escapeHtml(w.word)}</span>`
-            ).join(' ');
+            subText.innerHTML = words.map((w, idx) => `
+              <span class="gw-word" data-word-idx="${idx}">${escapeHtml(w.word)}</span>
+            `).join(' ');
           } else {
             subText.textContent = active.text;
           }
         }
 
-        // Active word karaoke timing check
         if (isKaraokeActive) {
-          const spans = subText.querySelectorAll('.gw-word');
-          const totalWords = spans.length;
-          spans.forEach((span, idx) => {
-            const wStart = parseFloat(span.getAttribute('data-start'));
-            const wEnd = parseFloat(span.getAttribute('data-end'));
-            const isLastWord = (idx === totalWords - 1);
-            const isCurrent = t >= wStart && (isLastWord ? t <= wEnd : t < wEnd);
+          const words = getCueWords(active);
+          const wordSpans = subText.querySelectorAll('.gw-word');
 
-            if (isCurrent) {
-              if (!span.classList.contains('active-word')) {
-                span.className = 'gw-word active-word';
-              }
-            } else if (t >= wEnd) {
-              if (!span.classList.contains('past-word')) {
-                span.className = 'gw-word past-word';
-              }
-            } else {
-              if (!span.classList.contains('future-word')) {
-                span.className = 'gw-word future-word';
+          words.forEach((w, idx) => {
+            const span = wordSpans[idx];
+            if (span) {
+              const isLastWord = (idx === words.length - 1);
+              const isCurrent = t >= w.start && (isLastWord ? t <= w.end : t < w.end);
+              if (isCurrent) {
+                if (!span.classList.contains('active-word')) {
+                  wordSpans.forEach(s => s.classList.remove('active-word'));
+                  span.classList.add('active-word');
+                }
               }
             }
           });
         }
       } else {
         lastActiveCue = null;
-        subText.textContent = '';
-        subText.style.display = 'none';
+        if (!video.paused) {
+          subText.textContent = '';
+          subText.style.display = 'none';
+        }
       }
 
       highlightActiveCueItem(t);
@@ -782,6 +872,7 @@
 
     function startPlaybackSync() {
       if (animLoopId) cancelAnimationFrame(animLoopId);
+      dragHandle.classList.add('playing');
       function step() {
         updateActiveSubtitle();
         if (!video.paused && !video.ended) {
@@ -795,21 +886,141 @@
     video.addEventListener('playing', startPlaybackSync);
     video.addEventListener('pause', () => {
       if (animLoopId) cancelAnimationFrame(animLoopId);
+      dragHandle.classList.remove('playing');
       updateActiveSubtitle();
     });
     video.addEventListener('seeked', updateActiveSubtitle);
     video.addEventListener('timeupdate', updateActiveSubtitle);
 
-    // Style Presets
-    document.querySelectorAll('.gw-preset-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.gw-preset-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentStyle = btn.dataset.style;
+    // Drag-to-position handle logic (Mouse & Touch)
+    function onDragMove(clientY) {
+      const rect = videoContainer.getBoundingClientRect();
+      if (!rect.height) return;
+      const offsetY = clientY - rect.top;
+      let pct = Math.round((offsetY / rect.height) * 100);
+      pct = Math.max(5, Math.min(95, pct));
+      subtitlePosPercent = pct;
+      overlay.style.top = `${subtitlePosPercent}%`;
+      if (posHeightSlider) posHeightSlider.value = subtitlePosPercent;
+    }
+
+    dragHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDraggingPosHandle = true;
+      document.body.style.cursor = 'ns-resize';
+    });
+
+    dragHandle.addEventListener('touchstart', (e) => {
+      isDraggingPosHandle = true;
+    }, { passive: true });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDraggingPosHandle) {
+        onDragMove(e.clientY);
+      }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isDraggingPosHandle && e.touches[0]) {
+        onDragMove(e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('mouseup', () => {
+      if (isDraggingPosHandle) {
+        isDraggingPosHandle = false;
+        document.body.style.cursor = '';
+      }
+    });
+
+    window.addEventListener('touchend', () => {
+      isDraggingPosHandle = false;
+    });
+
+    // AutoCap Preset Cards Click Handler
+    document.querySelectorAll('.gw-style-card').forEach(card => {
+      card.onclick = () => {
+        document.querySelectorAll('.gw-style-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        currentStyle = card.dataset.style;
+        const presetObj = AUTOCAP_PRESETS.find(p => p.id === currentStyle);
+        if (presetObj) {
+          customColors.activeColor1 = presetObj.activeColor1;
+          customColors.activeColor2 = presetObj.activeColor2;
+          color1Input.value = customColors.activeColor1;
+          color2Input.value = customColors.activeColor2;
+          document.getElementById('gwColor1Hex').textContent = customColors.activeColor1;
+          document.getElementById('gwColor2Hex').textContent = customColors.activeColor2;
+          document.getElementById('gwColor1Swatch').style.background = customColors.activeColor1;
+          document.getElementById('gwColor2Swatch').style.background = customColors.activeColor2;
+          applyCustomizerCSS();
+        }
         lastActiveCue = null;
         updateActiveSubtitle();
       };
     });
+
+    // Customizer Input Handlers
+    color1Input.oninput = (e) => {
+      customColors.activeColor1 = e.target.value;
+      document.getElementById('gwColor1Hex').textContent = customColors.activeColor1;
+      document.getElementById('gwColor1Swatch').style.background = customColors.activeColor1;
+      applyCustomizerCSS();
+    };
+
+    color2Input.oninput = (e) => {
+      customColors.activeColor2 = e.target.value;
+      document.getElementById('gwColor2Hex').textContent = customColors.activeColor2;
+      document.getElementById('gwColor2Swatch').style.background = customColors.activeColor2;
+      applyCustomizerCSS();
+    };
+
+    fontColorInput.oninput = (e) => {
+      customColors.fontColor = e.target.value;
+      document.getElementById('gwFontColorSwatch').style.background = customColors.fontColor;
+      applyCustomizerCSS();
+    };
+
+    strokeColorInput.oninput = (e) => {
+      customColors.strokeColor = e.target.value;
+      document.getElementById('gwStrokeColorSwatch').style.background = customColors.strokeColor;
+      applyCustomizerCSS();
+    };
+
+    strokeWidthSlider.oninput = (e) => {
+      customColors.strokeWidth = parseInt(e.target.value, 10);
+      applyCustomizerCSS();
+    };
+
+    posHeightSlider.oninput = (e) => {
+      subtitlePosPercent = parseInt(e.target.value, 10);
+      overlay.style.top = `${subtitlePosPercent}%`;
+    };
+
+    resetCustomizerBtn.onclick = () => {
+      const presetObj = AUTOCAP_PRESETS.find(p => p.id === currentStyle) || AUTOCAP_PRESETS[0];
+      customColors = {
+        activeColor1: presetObj.activeColor1,
+        activeColor2: presetObj.activeColor2,
+        fontColor: '#ffffff',
+        strokeColor: '#000000',
+        strokeWidth: 5
+      };
+      color1Input.value = customColors.activeColor1;
+      color2Input.value = customColors.activeColor2;
+      fontColorInput.value = customColors.fontColor;
+      strokeColorInput.value = customColors.strokeColor;
+      strokeWidthSlider.value = customColors.strokeWidth;
+      document.getElementById('gwColor1Hex').textContent = customColors.activeColor1;
+      document.getElementById('gwColor2Hex').textContent = customColors.activeColor2;
+      document.getElementById('gwColor1Swatch').style.background = customColors.activeColor1;
+      document.getElementById('gwColor2Swatch').style.background = customColors.activeColor2;
+      document.getElementById('gwFontColorSwatch').style.background = customColors.fontColor;
+      document.getElementById('gwStrokeColorSwatch').style.background = customColors.strokeColor;
+      applyCustomizerCSS();
+      lastActiveCue = null;
+      updateActiveSubtitle();
+    };
 
     // Animation Presets
     document.querySelectorAll('.gw-anim-btn').forEach(btn => {
@@ -836,7 +1047,11 @@
     document.querySelectorAll('.gw-pos-btn').forEach(btn => {
       btn.onclick = () => {
         currentPos = btn.dataset.pos;
-        overlay.className = `gw-sub-overlay pos-${currentPos}`;
+        if (currentPos === 'top') subtitlePosPercent = 18;
+        else if (currentPos === 'middle') subtitlePosPercent = 50;
+        else subtitlePosPercent = 85;
+        overlay.style.top = `${subtitlePosPercent}%`;
+        posHeightSlider.value = subtitlePosPercent;
       };
     });
 
@@ -849,211 +1064,190 @@
     // 1. Instant Auto-Timeline Button
     autoGenBtn.onclick = () => {
       const dur = video.duration || 12;
-      const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
-      cues = generateDefaultCues(dur, lang);
+      cues = generateDefaultCues(dur, subLangSelect.value);
       renderCues();
       updateActiveSubtitle();
-      transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} synced subtitle cues for your ${Math.round(dur)}s video!`;
+      transcribeStatus.textContent = `⚡ Generated ${cues.length} auto-synced subtitle cues for ${subLangSelect.options[subLangSelect.selectedIndex].text}!`;
     };
 
-    // 2. Direct Whisper AI Audio Transcription (No Mic Needed)
+    // 2. Whisper AI Backend Transcription Button
     whisperAiBtn.onclick = async () => {
-      if (!videoFile) {
-        transcribeStatus.textContent = 'Please choose a video file first.';
+      if (!videoFile && (!video.src || video.src.startsWith('blob:http') === false)) {
+        alert('Please select or upload a video file first for Whisper AI transcription.');
         return;
       }
 
       whisperAiBtn.disabled = true;
-      whisperAiBtn.textContent = '⏳ Extracting Audio…';
-      transcribeStatus.innerHTML = '🎵 <b>Extracting audio track directly from video file…</b>';
+      transcribeStatus.textContent = '⏳ Extracting audio track from video for Whisper AI…';
 
       try {
-        const { blob: audioBlob, format: audioFormat } = await extractAudioWav(videoFile);
-        whisperAiBtn.textContent = '🤖 Whisper AI Transcribing…';
-        transcribeStatus.innerHTML = `🤖 <b>Whisper AI is transcribing spoken voice…</b> (Groq Whisper Large-v3)`;
+        let audioBlob = null;
+        let format = 'wav';
 
-        const audioBase64 = await blobToBase64(audioBlob);
-        const lang = document.getElementById('gwSubLang')?.value || 'hi-IN';
-        const activeKey = getActiveWhisperKey();
+        if (videoFile) {
+          const res = await extractAudioWav(videoFile, 90);
+          audioBlob = res.blob;
+          format = res.format;
+        } else {
+          const res = await fetch(video.src);
+          audioBlob = await res.blob();
+        }
 
-        const res = await fetch('/api/transcribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': activeKey
-          },
-          body: JSON.stringify({
-            audioBase64,
-            language: lang.split('-')[0],
-            format: audioFormat || 'wav'
-          })
-        });
+        transcribeStatus.textContent = '🤖 Sending audio to OpenAI Whisper API for exact word transcription…';
 
-        const data = await res.json();
-        if (data.ok && Array.isArray(data.cues) && data.cues.length > 0) {
-          cues = data.cues;
+        const apiKey = getActiveWhisperKey();
+        let payload = null;
+
+        if (apiKey) {
+          const formData = new FormData();
+          formData.append('file', audioBlob, `audio.${format}`);
+          formData.append('model', 'whisper-1');
+          formData.append('response_format', 'verbose_json');
+          formData.append('timestamp_granularities[]', 'word');
+
+          const langVal = subLangSelect.value;
+          if (langVal.startsWith('hi')) formData.append('language', 'hi');
+          else if (langVal.startsWith('en')) formData.append('language', 'en');
+          else if (langVal.startsWith('bn')) formData.append('language', 'bn');
+          else if (langVal.startsWith('gu')) formData.append('language', 'gu');
+          else if (langVal.startsWith('kn')) formData.append('language', 'kn');
+          else if (langVal.startsWith('ml')) formData.append('language', 'ml');
+          else if (langVal.startsWith('mr')) formData.append('language', 'mr');
+          else if (langVal.startsWith('pa')) formData.append('language', 'pa');
+          else if (langVal.startsWith('ta')) formData.append('language', 'ta');
+          else if (langVal.startsWith('te')) formData.append('language', 'te');
+          else if (langVal.startsWith('ur')) formData.append('language', 'ur');
+
+          const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            body: formData
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`OpenAI API Error ${response.status}: ${errText}`);
+          }
+          payload = await response.json();
+        } else {
+          const audioBase64 = await blobToBase64(audioBlob);
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audio: audioBase64, language: subLangSelect.value, format })
+          });
+          payload = await response.json();
+        }
+
+        if (payload && Array.isArray(payload.words) && payload.words.length > 0) {
+          const words = payload.words;
+          cues = [];
+          for (let i = 0; i < words.length; i += 3) {
+            const group = words.slice(i, i + 3);
+            const start = group[0].start;
+            const end = group[group.length - 1].end;
+            const text = group.map(g => g.word).join(' ');
+            const wordList = group.map(g => ({
+              word: g.word,
+              start: Number(g.start.toFixed(2)),
+              end: Number(g.end.toFixed(2))
+            }));
+            cues.push({ start: Number(start.toFixed(1)), end: Number(end.toFixed(1)), text, words: wordList });
+          }
           renderCues();
           updateActiveSubtitle();
-          transcribeStatus.innerHTML = `✅ <b>Whisper AI Success!</b> Accurately transcribed <b>${cues.length} speech subtitle cues</b> from video audio!`;
-        } else if (data.needKey) {
-          keyModal.classList.remove('hidden');
-          apiKeyInput.value = activeKey;
-          apiKeyInput.focus();
-          transcribeStatus.textContent = '🔑 Enter your free Groq Whisper API key to transcribe video voice.';
+          transcribeStatus.textContent = `✨ Whisper AI successfully transcribed ${words.length} exact spoken words!`;
+        } else if (payload && payload.text) {
+          const words = payload.text.trim().split(/\s+/);
+          const dur = video.duration || 10;
+          const wDur = dur / words.length;
+          cues = [];
+          for (let i = 0; i < words.length; i += 3) {
+            const group = words.slice(i, i + 3);
+            const start = Number((i * wDur).toFixed(1));
+            const end = Number(((i + group.length) * wDur).toFixed(1));
+            const text = group.join(' ');
+            cues.push({ start, end, text });
+          }
+          renderCues();
+          updateActiveSubtitle();
+          transcribeStatus.textContent = `✨ Transcribed voice text into ${cues.length} subtitle cues!`;
         } else {
-          throw new Error(data.error || 'Whisper AI could not transcribe audio.');
+          throw new Error('Whisper returned empty transcription text.');
         }
       } catch (err) {
-        console.warn('Whisper error:', err);
-        transcribeStatus.innerHTML = `<span style="color:#ef4444;">⚠️ ${err.message || 'Whisper AI call failed.'}</span> You can also use <b>"Instant Auto-Timeline"</b> or <b>"Paste Text"</b>.`;
-      } finally {
-        whisperAiBtn.disabled = false;
-        whisperAiBtn.textContent = '🤖 Whisper AI (Accurate Voice)';
-      }
-    };
-
-    // Auto-seed default key into localStorage if empty
-    try {
-      if (!localStorage.getItem('gw_whisper_api_key')) {
-        const defK = getActiveWhisperKey();
-        if (defK) localStorage.setItem('gw_whisper_api_key', defK);
-      }
-    } catch {}
-
-    // Key Modal Handlers
-    closeKeyBtn.onclick = () => keyModal.classList.add('hidden');
-    cancelKeyBtn.onclick = () => keyModal.classList.add('hidden');
-    saveKeyBtn.onclick = () => {
-      const k = apiKeyInput.value.trim();
-      if (!k) {
-        alert('Please enter your API key.');
-        return;
-      }
-      localStorage.setItem('gw_whisper_api_key', k);
-      keyModal.classList.add('hidden');
-      whisperAiBtn.click();
-    };
-
-    // 3. Mic Speech-to-Text Transcription with Continuous Auto-Restart
-    transcribeBtn.onclick = () => {
-      if (!video.src) {
-        transcribeStatus.textContent = 'Please choose a video file first.';
-        return;
-      }
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const lang = document.getElementById('gwSubLang').value || 'hi-IN';
-
-      if (!SpeechRecognition) {
-        transcribeStatus.textContent = 'Browser Speech Recognition not supported. Auto-generating synced subtitle timeline instead...';
-        cues = generateDefaultCues(video.duration || 15, lang);
+        console.warn('Whisper AI failed, using fallback timeline:', err);
+        cues = generateDefaultCues(video.duration || 10, subLangSelect.value);
         renderCues();
         updateActiveSubtitle();
+        transcribeStatus.textContent = `⚠️ Whisper failed (${err.message}). Auto-synced timeline generated!`;
+      } finally {
+        whisperAiBtn.disabled = false;
+      }
+    };
+
+    // 3. Web Speech API Microphone Live Transcribe Button
+    autoTranscribeBtn.onclick = () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Web Speech API is not supported in this browser. Please use Google Chrome or Whisper AI.');
         return;
       }
 
       if (isTranscribing) {
+        if (activeRecognition) activeRecognition.stop();
         isTranscribing = false;
-        if (activeRecognition) {
-          try { activeRecognition.stop(); } catch {}
-        }
-        video.pause();
-        transcribeBtn.textContent = '🎙️ Mic Transcribe';
-        transcribeStatus.textContent = `Transcription stopped. Total ${cues.length} subtitle cues.`;
+        autoTranscribeBtn.textContent = '🎙️ Mic Transcribe';
+        transcribeStatus.textContent = 'Voice recording stopped.';
         return;
       }
 
-      isTranscribing = true;
-      transcribeBtn.textContent = '⏹ Stop Mic';
-      cues = [];
-      renderCues();
+      const recognition = new SpeechRecognition();
+      activeRecognition = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = subLangSelect.value;
 
-      transcribeStatus.textContent = '🎙️ Listening to video audio... (Make sure speakers are on)';
-      video.currentTime = 0;
-      video.muted = false;
-      video.play().catch(() => {});
+      let transcriptBuffer = [];
+      let startTime = video.currentTime || 0;
 
-      let phraseStart = 0;
+      recognition.onstart = () => {
+        isTranscribing = true;
+        autoTranscribeBtn.textContent = '⏹️ Stop Recording';
+        transcribeStatus.textContent = '🎙️ Listening to speech… Speak clearly into microphone.';
+        video.play();
+      };
 
-      function startRecognition() {
-        if (!isTranscribing) return;
-        const recognition = new SpeechRecognition();
-        recognition.lang = lang;
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        activeRecognition = recognition;
-
-        recognition.onresult = (event) => {
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            const res = event.results[i];
-            const transcript = res[0].transcript.trim();
-            if (!transcript) continue;
-
-            const now = Number(video.currentTime.toFixed(1));
-
-            if (res.isFinal) {
-              const start = Number(Math.max(0, phraseStart).toFixed(1));
-              const end = Number(Math.max(start + 1.0, now).toFixed(1));
-              cues.push({ start, end, text: transcript });
-              phraseStart = now;
-              renderCues();
-              updateActiveSubtitle();
-              transcribeStatus.textContent = `🎙️ Captured: "${transcript}" (${cues.length} lines total)`;
-            } else {
-              subText.textContent = transcript;
-              subText.style.display = 'inline-block';
-              transcribeStatus.textContent = `🎙️ Hearing: "${transcript}"...`;
-            }
-          }
-        };
-
-        recognition.onerror = (event) => {
-          if (event.error === 'not-allowed') {
-            transcribeStatus.textContent = 'Microphone permission blocked. Please allow mic in browser settings or use "Whisper AI" / "Instant Auto-Timeline".';
-            isTranscribing = false;
-            transcribeBtn.textContent = '🎙️ Mic Transcribe';
-          }
-        };
-
-        recognition.onend = () => {
-          if (isTranscribing && !video.paused && !video.ended) {
-            try { recognition.start(); } catch {}
-          } else if (!isTranscribing || video.ended) {
-            isTranscribing = false;
-            transcribeBtn.textContent = '🎙️ Mic Transcribe';
-            if (cues.length > 0) {
-              transcribeStatus.textContent = `✅ Transcription complete! Generated ${cues.length} subtitle cues.`;
-            } else {
-              transcribeStatus.textContent = `⚡ Microphone captured 0 words. Auto-generated synced subtitle timeline for your video!`;
-              cues = generateDefaultCues(video.duration || 15, lang);
-              renderCues();
-              updateActiveSubtitle();
-            }
-          }
-        };
-
-        try {
-          recognition.start();
-        } catch (e) {
-          console.warn('Recognition start error:', e);
-        }
-      }
-
-      video.onended = () => {
+      recognition.onerror = (e) => {
+        transcribeStatus.textContent = `Mic Transcription error: ${e.error}`;
         isTranscribing = false;
-        transcribeBtn.textContent = '🎙️ Mic Transcribe';
-        if (activeRecognition) {
-          try { activeRecognition.stop(); } catch {}
-        }
-        if (cues.length === 0) {
-          cues = generateDefaultCues(video.duration || 15, lang);
-          renderCues();
-          updateActiveSubtitle();
-          transcribeStatus.textContent = `⚡ Auto-generated ${cues.length} synced subtitle cues for your video!`;
+        autoTranscribeBtn.textContent = '🎙️ Mic Transcribe';
+      };
+
+      recognition.onend = () => {
+        isTranscribing = false;
+        autoTranscribeBtn.textContent = '🎙️ Mic Transcribe';
+      };
+
+      recognition.onresult = (e) => {
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            const text = e.results[i][0].transcript.trim();
+            const now = video.currentTime || (startTime + 2.0);
+            cues.push({
+              start: Number(startTime.toFixed(1)),
+              end: Number(now.toFixed(1)),
+              text: text
+            });
+            startTime = now;
+            renderCues();
+            updateActiveSubtitle();
+            transcribeStatus.textContent = `⚡ Live added: "${text}"`;
+          }
         }
       };
 
-      startRecognition();
+      recognition.start();
     };
 
     // 4. Paste Script / Lyrics Modal Feature
@@ -1071,7 +1265,7 @@
         alert('Please paste or type text first.');
         return;
       }
-      // If multiple lines provided, use lines; otherwise split into 3-word punchy phrases
+
       let phrases = [];
       const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (lines.length > 1) {
@@ -1167,9 +1361,9 @@
       a.click();
     };
 
-    // 8. Burn-In Subtitles into Video via Canvas & MediaRecorder
+    // 8. Burn-In Subtitles into Video via Canvas & MediaRecorder (Supports all 16 AutoCap presets & customizer)
     document.getElementById('gwBurnSubBtn').onclick = async () => {
-      if (!videoFile || !video.src) {
+      if (!videoFile && (!video.src || video.src.startsWith('blob:') === false)) {
         alert('Please select or upload a video first.');
         return;
       }
@@ -1191,7 +1385,6 @@
 
         const stream = canvas.captureStream(30);
 
-        // Mix in audio from video safely using singleton AudioContext
         try {
           if (!activeAudioContext) {
             activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1212,11 +1405,13 @@
         const chunks = [];
         recorder.ondataavailable = (e) => { if (e.data?.size > 0) chunks.push(e.data); };
 
+        const fileName = videoFile ? videoFile.name.replace(/\.[^/.]+$/, '') : 'captioned-video';
+
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'video/webm' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = `captioned-${videoFile.name.replace(/\.[^/.]+$/, '')}.webm`;
+          a.download = `captioned-${fileName}.webm`;
           a.click();
           burnBtn.disabled = false;
           progressWrap.style.display = 'none';
@@ -1234,20 +1429,21 @@
 
           ctx.drawImage(video, 0, 0, vw, vh);
 
-          // Find active subtitle
           const t = video.currentTime;
           const active = cues.find(c => t >= c.start && t <= c.end);
           if (active && active.text.trim()) {
             ctx.save();
             const text = active.text.trim();
             const scale = vh / 720;
-            const fontSize = Math.round(currentSize * scale * 1.5);
-
-            let y = vh * 0.88;
-            if (currentPos === 'middle') y = vh * 0.5;
-            else if (currentPos === 'top') y = vh * 0.15;
-
+            const fontSize = Math.round(currentSize * scale * 1.4);
+            const y = vh * (subtitlePosPercent / 100);
             const x = vw / 2;
+
+            const strokeW = Math.max(1, Math.round((customColors.strokeWidth || 5) * scale));
+            const color1 = customColors.activeColor1 || '#00f2fe';
+            const color2 = customColors.activeColor2 || '#ffeb3b';
+            const fontCol = customColors.fontColor || '#ffffff';
+            const strokeCol = customColors.strokeColor || '#000000';
 
             if (isKaraokeActive) {
               const words = getCueWords(active);
@@ -1267,17 +1463,31 @@
               if (currentStyle === 'hormozi') {
                 const padX = fontSize * 0.4;
                 const padY = fontSize * 0.25;
-                ctx.fillStyle = '#ffe600';
+                ctx.fillStyle = color1;
                 ctx.fillRect(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2);
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = strokeCol;
+                ctx.lineWidth = strokeW;
                 ctx.strokeRect(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2);
-              } else if (currentStyle === 'minimal') {
+              } else if (currentStyle === 'minimal' || currentStyle === 'clean-minimal') {
                 const padX = fontSize * 0.5;
                 const padY = fontSize * 0.3;
                 ctx.fillStyle = 'rgba(17,19,24,0.85)';
                 ctx.beginPath();
                 ctx.roundRect?.(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2, 999);
+                ctx.fill();
+              } else if (currentStyle === 'casual') {
+                const padX = fontSize * 0.5;
+                const padY = fontSize * 0.25;
+                ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                ctx.beginPath();
+                ctx.roundRect?.(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2, 999);
+                ctx.fill();
+              } else if (currentStyle === 'shorts') {
+                const padX = fontSize * 0.4;
+                const padY = fontSize * 0.2;
+                ctx.fillStyle = 'rgba(0,0,0,0.88)';
+                ctx.beginPath();
+                ctx.roundRect?.(x - totalWidth / 2 - padX, y - fontSize / 2 - padY, totalWidth + padX * 2, fontSize + padY * 2, 12);
                 ctx.fill();
               }
 
@@ -1289,46 +1499,74 @@
                 const isCurrent = t >= w.start && (isLastWord ? t <= w.end : t < w.end);
                 const wCenterX = curX + wm.width / 2;
 
+                ctx.save();
                 if (currentStyle === 'hormozi') {
                   if (isCurrent) {
-                    ctx.fillStyle = '#000000';
+                    ctx.fillStyle = strokeCol;
                     ctx.fillRect(curX - 4, y - fontSize / 2 - 2, wm.width + 8, fontSize + 4);
-                    ctx.fillStyle = '#ffe600';
+                    ctx.fillStyle = color1;
                     ctx.fillText(w.word, wCenterX, y);
                   } else {
-                    ctx.fillStyle = '#000000';
+                    ctx.fillStyle = strokeCol;
                     ctx.fillText(w.word, wCenterX, y);
                   }
-                } else if (currentStyle === 'minimal') {
-                  ctx.fillStyle = isCurrent ? '#38bdf8' : '#ffffff';
+                } else if (currentStyle === 'minimal' || currentStyle === 'clean-minimal') {
+                  ctx.fillStyle = isCurrent ? color1 : fontCol;
                   ctx.font = `600 ${fontSize * (isCurrent ? 1.05 : 0.9)}px "Montserrat", "Noto Sans Devanagari", "Poppins", -apple-system, sans-serif`;
                   ctx.fillText(w.word, wCenterX, y);
-                } else if (currentStyle === 'neon') {
-                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
-                  ctx.strokeStyle = '#000000';
-                  ctx.strokeText(w.word, wCenterX, y);
-                  ctx.fillStyle = isCurrent ? '#ff007f' : '#00f2fe';
+                } else if (currentStyle === 'casual') {
+                  ctx.fillStyle = isCurrent ? color1 : '#0f172a';
                   ctx.fillText(w.word, wCenterX, y);
-                } else if (currentStyle === 'gradient') {
-                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
-                  ctx.strokeStyle = '#000000';
+                } else if (currentStyle === 'neon') {
+                  ctx.shadowColor = color1;
+                  ctx.shadowBlur = isCurrent ? 20 * scale : 5 * scale;
+                  ctx.lineWidth = strokeW;
+                  ctx.strokeStyle = strokeCol;
                   ctx.strokeText(w.word, wCenterX, y);
-                  const palette = ['#f43f5e', '#c084fc', '#38bdf8', '#34d399'];
-                  ctx.fillStyle = isCurrent ? '#ffe600' : palette[i % palette.length];
+                  ctx.fillStyle = isCurrent ? color1 : color2;
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'fire') {
+                  ctx.shadowColor = '#ff4500';
+                  ctx.shadowBlur = isCurrent ? 18 * scale : 4 * scale;
+                  ctx.lineWidth = strokeW;
+                  ctx.strokeStyle = strokeCol;
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? color2 : color1;
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'word-glow') {
+                  ctx.shadowColor = color1;
+                  ctx.shadowBlur = isCurrent ? 22 * scale : 2 * scale;
+                  ctx.lineWidth = strokeW;
+                  ctx.strokeStyle = strokeCol;
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? color1 : fontCol;
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'bold-pop') {
+                  ctx.lineWidth = strokeW * 1.4;
+                  ctx.strokeStyle = strokeCol;
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? color1 : color2;
+                  ctx.fillText(w.word, wCenterX, y);
+                } else if (currentStyle === 'word-pop' || currentStyle === 'word-drop') {
+                  ctx.lineWidth = strokeW;
+                  ctx.strokeStyle = strokeCol;
+                  ctx.strokeText(w.word, wCenterX, y);
+                  ctx.fillStyle = isCurrent ? color1 : fontCol;
                   ctx.fillText(w.word, wCenterX, y);
                 } else {
-                  // Viral Reel
-                  ctx.lineWidth = Math.max(3, fontSize * 0.14);
-                  ctx.strokeStyle = '#000000';
+                  // Viral Reel & Default
+                  ctx.lineWidth = strokeW;
+                  ctx.strokeStyle = strokeCol;
                   ctx.strokeText(w.word, wCenterX, y);
-                  ctx.fillStyle = isCurrent ? '#00f2fe' : '#ffeb3b';
+                  ctx.fillStyle = isCurrent ? color1 : color2;
                   ctx.fillText(w.word, wCenterX, y);
                 }
+                ctx.restore();
 
                 curX += wm.width + spaceWidth;
               }
             } else {
-              // Static subtitle rendering
+              // Static text rendering
               ctx.font = `900 ${fontSize}px "Montserrat", "Noto Sans Devanagari", "Poppins", -apple-system, sans-serif`;
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
@@ -1337,9 +1575,9 @@
                 const metrics = ctx.measureText(text);
                 const padX = fontSize * 0.4;
                 const padY = fontSize * 0.25;
-                ctx.fillStyle = '#ffe600';
+                ctx.fillStyle = color1;
                 ctx.fillRect(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2);
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = strokeCol;
                 ctx.fillText(text, x, y);
               } else if (currentStyle === 'minimal') {
                 const metrics = ctx.measureText(text);
@@ -1349,14 +1587,13 @@
                 ctx.beginPath();
                 ctx.roundRect?.(x - metrics.width / 2 - padX, y - fontSize / 2 - padY, metrics.width + padX * 2, fontSize + padY * 2, 999);
                 ctx.fill();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = `600 ${fontSize * 0.9}px -apple-system, sans-serif`;
+                ctx.fillStyle = fontCol;
                 ctx.fillText(text, x, y);
               } else {
-                ctx.lineWidth = Math.max(3, fontSize * 0.15);
-                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = strokeW;
+                ctx.strokeStyle = strokeCol;
                 ctx.strokeText(text, x, y);
-                ctx.fillStyle = currentStyle === 'neon' ? '#00f2fe' : (currentStyle === 'gradient' ? '#a855f7' : '#ffeb3b');
+                ctx.fillStyle = color1;
                 ctx.fillText(text, x, y);
               }
             }
@@ -1377,7 +1614,6 @@
       }
     };
 
-    // Watch for cleaned video in watermark remover to add shortcut button
     const workspace = document.getElementById('workspace');
     if (workspace) {
       const observer = new MutationObserver(() => {
@@ -1386,7 +1622,6 @@
       observer.observe(workspace, { childList: true, subtree: true });
     }
 
-    // Auto-open if navigated with #subtitlesTab hash
     if (window.location.hash.includes('subtitlesTab')) {
       setTimeout(() => {
         selectSubtitlesTab();
@@ -1394,7 +1629,6 @@
       }, 150);
     }
 
-    // Default initial cues
     renderCues();
     updateSamplePreview();
   }
@@ -1409,7 +1643,6 @@
     }
   }
 
-  // 1. MutationObserver ensures re-mounting if app.innerHTML is overwritten
   try {
     const domObserver = new MutationObserver(() => {
       ensureSubtitleStudioMounted();
@@ -1417,11 +1650,9 @@
     domObserver.observe(document.documentElement, { childList: true, subtree: true });
   } catch {}
 
-  // 2. High-frequency poller during initial boot window
   const bootInterval = setInterval(ensureSubtitleStudioMounted, 60);
   setTimeout(() => clearInterval(bootInterval), 10000);
 
-  // 3. Immediate attempt
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensureSubtitleStudioMounted);
   }

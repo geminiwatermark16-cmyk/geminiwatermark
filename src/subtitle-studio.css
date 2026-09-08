@@ -187,7 +187,7 @@
   filter: drop-shadow(0 0 20px rgba(255, 0, 127, 0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.9));
 }
 
-/* 5. Gradient (Multi-word vibrant palette, zero clipping bug) */
+/* 5. Gradient (Multi-word vibrant palette) */
 .gw-style-gradient {
   font-family: 'Montserrat', 'Noto Sans Devanagari', 'Poppins', -apple-system, sans-serif;
   font-weight: 900;
@@ -201,22 +201,393 @@
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
 }
 
-.gw-style-gradient .gw-word:nth-child(2) {
-  color: #c084fc;
-}
-
-.gw-style-gradient .gw-word:nth-child(3) {
-  color: #38bdf8;
-}
-
-.gw-style-gradient .gw-word:nth-child(4) {
-  color: #34d399;
-}
+.gw-style-gradient .gw-word:nth-child(2) { color: #c084fc; }
+.gw-style-gradient .gw-word:nth-child(3) { color: #38bdf8; }
+.gw-style-gradient .gw-word:nth-child(4) { color: #34d399; }
 
 .gw-style-gradient .gw-word.active-word {
   color: #ffe600 !important;
   transform: scale(1.22) translateY(-4px);
   filter: drop-shadow(0 0 18px rgba(255, 230, 0, 0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+
+/* 6. Cinematic (PREMIUM) */
+.gw-style-cinematic {
+  font-family: 'Montserrat', 'Impact', sans-serif;
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em !important;
+}
+.gw-style-cinematic .gw-word {
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.9));
+}
+.gw-style-cinematic .gw-word.active-word {
+  color: #facc15 !important;
+  transform: scale(1.2) translateY(-3px);
+  filter: drop-shadow(0 0 18px rgba(250,204,21,0.9));
+}
+
+/* 7. Casual (HANDWRITTEN) */
+.gw-style-casual {
+  font-family: 'Caveat', 'Dancing Script', cursive, sans-serif;
+  color: #ffffff;
+  font-size: 1.15em;
+  font-weight: 700;
+}
+.gw-style-casual .gw-word {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.85));
+}
+.gw-style-casual .gw-word.active-word {
+  color: #38bdf8 !important;
+  transform: scale(1.25) rotate(-3deg);
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.9));
+}
+
+/* 8. Bold Pop (TRENDING) */
+.gw-style-bold-pop {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  background: #0066ff;
+  color: #ffffff;
+  font-weight: 900;
+  border-radius: 8px;
+  padding: 6px 18px;
+  box-shadow: 0 6px 20px rgba(0, 102, 255, 0.45);
+}
+.gw-style-bold-pop .gw-word {
+  color: #ffffff;
+}
+.gw-style-bold-pop .gw-word.active-word {
+  color: #ffe600 !important;
+  transform: scale(1.18) translateY(-2px);
+  filter: drop-shadow(0 0 12px rgba(255,230,0,0.9));
+}
+
+/* 9. Clean Minimal (PROFESSIONAL) */
+.gw-style-clean-minimal {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  background: rgba(0, 0, 0, 0.88);
+  color: #ffffff;
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 6px 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.gw-style-clean-minimal .gw-word { color: #ffffff; }
+.gw-style-clean-minimal .gw-word.active-word {
+  color: #00f2fe !important;
+  transform: scale(1.15) translateY(-2px);
+  filter: drop-shadow(0 0 14px rgba(0,242,254,0.9));
+}
+
+/* 10. Fire (ENERGY) */
+.gw-style-fire {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ff6600;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(-6deg);
+}
+.gw-style-fire .gw-word {
+  -webkit-text-stroke: 6px #000000;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 6px 16px rgba(255, 102, 0, 0.6));
+}
+.gw-style-fire .gw-word.active-word {
+  color: #ffe600 !important;
+  transform: scale(1.22) translateY(-4px) skewX(-4deg);
+  filter: drop-shadow(0 0 22px rgba(255, 230, 0, 0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+
+/* 11. Word Glow (NEON) */
+.gw-style-word-glow {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.gw-style-word-glow .gw-word {
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+.gw-style-word-glow .gw-word.active-word {
+  color: #00eeff !important;
+  transform: scale(1.22) translateY(-3px);
+  filter: drop-shadow(0 0 24px #00eeff) drop-shadow(0 0 40px rgba(0,238,255,0.8));
+}
+
+/* 12. Shorts (CLASSIC) */
+.gw-style-shorts {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.gw-style-shorts .gw-word {
+  -webkit-text-stroke: 6px #000000;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.85));
+}
+.gw-style-shorts .gw-word.active-word {
+  color: #ffe600 !important;
+  transform: scale(1.24) translateY(-4px);
+  filter: drop-shadow(0 0 18px rgba(255,230,0,0.95));
+}
+
+/* 13. Street Bold (VIRAL) */
+.gw-style-street-bold {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffe600;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(-5deg);
+}
+.gw-style-street-bold .gw-word {
+  -webkit-text-stroke: 6px #000000;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.9));
+}
+.gw-style-street-bold .gw-word.active-word {
+  color: #00f2fe !important;
+  transform: scale(1.22) translateY(-4px) skewX(-3deg);
+  filter: drop-shadow(0 0 20px #00f2fe);
+}
+
+/* 14. Plain (SIMPLE) */
+.gw-style-plain {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffffff;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.gw-style-plain .gw-word {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.85));
+}
+.gw-style-plain .gw-word.active-word {
+  color: #38bdf8 !important;
+  transform: scale(1.15) translateY(-2px);
+}
+
+/* 15. Word Pop (KARAOKE) */
+.gw-style-word-pop {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.gw-style-word-pop .gw-word {
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+.gw-style-word-pop .gw-word.active-word {
+  background: #ef4444;
+  color: #ffffff !important;
+  border-radius: 6px;
+  padding: 2px 10px;
+  transform: scale(1.18) translateY(-3px);
+  box-shadow: 0 6px 20px rgba(239,68,68,0.5);
+}
+
+/* 16. Word Drop (PUNCHY) */
+.gw-style-word-drop {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.gw-style-word-drop .gw-word {
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+.gw-style-word-drop .gw-word.active-word {
+  color: #ff3333 !important;
+  transform: scale(1.22) translateY(-4px);
+  filter: drop-shadow(0 0 20px rgba(255,51,51,0.95));
+}
+
+/* 17. Custom Word Fill (VIBRANT) */
+.gw-style-word-fill {
+  font-family: 'Montserrat', 'Noto Sans Devanagari', 'Poppins', sans-serif;
+  color: var(--gw-font-color, #ffffff);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.gw-style-word-fill .gw-word {
+  -webkit-text-stroke: var(--gw-stroke-width, 5px) var(--gw-stroke-color, #000000);
+  paint-order: stroke fill;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+}
+.gw-style-word-fill .gw-word.active-word {
+  color: var(--gw-active-color1, #00ff04) !important;
+  transform: scale(1.22) translateY(-4px);
+  filter: drop-shadow(0 0 20px var(--gw-active-color1, #00ff04));
+}
+
+/* AutoCap Preset Cards Grid UI */
+.gw-preset-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.gw-style-card {
+  background: #1e1f26;
+  border: 2px solid #2d2f3a;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.gw-style-card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59,130,246,0.25);
+}
+.gw-style-card.active {
+  border-color: #2563eb;
+  background: #17181f;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.35), 0 8px 24px rgba(0,0,0,0.4);
+  position: relative;
+}
+.gw-style-card.active::after {
+  content: '✓';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #2563eb;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gw-card-preview {
+  height: 64px;
+  background: #111218;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  text-align: center;
+  font-size: 12px;
+}
+.gw-card-footer {
+  padding: 8px 10px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+}
+.gw-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.gw-card-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  background: #e2e8f0;
+  color: #475569;
+}
+.gw-card-badge.viral { background: #fef08a; color: #854d0e; }
+.gw-card-badge.trending { background: #dbeafe; color: #1e40af; }
+.gw-card-badge.neon { background: #fce7f3; color: #9d174d; }
+.gw-card-badge.premium { background: #fef3c7; color: #92400e; }
+.gw-card-badge.energy { background: #ffedd5; color: #9a3412; }
+.gw-card-badge.karaoke { background: #fee2e2; color: #991b1b; }
+.gw-card-badge.vibrant { background: #dcfce7; color: #166534; }
+
+/* Customizer Panel Controls (Image 4 clone) */
+.gw-customizer-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+.gw-custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.gw-custom-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+.gw-color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gw-color-input-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 3px 10px 3px 4px;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #0f172a;
+}
+.gw-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.gw-color-swatch input[type="color"] {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 40px;
+  height: 40px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Draggable Position Badge Overlay on Video (Image 2 issue fix) */
+.gw-drag-position-handle {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: ns-resize;
+  pointer-events: auto;
+  user-select: none;
+  z-index: 20;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}
+.gw-drag-position-handle.playing {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Animations */
