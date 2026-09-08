@@ -62,16 +62,20 @@
     if (!hero) return false;
 
     const badge = hero.querySelector('.badge');
-    if (badge) badge.innerHTML = `<i></i> 100% FREE · Unlimited Videos & Images`;
+    if (badge) badge.innerHTML = `<i></i> 12 Indian languages · Hinglish that stays Hinglish`;
 
     const h1 = hero.querySelector('h1');
-    if (h1) h1.innerHTML = 'Google Flow / Veo video watermark.<br><span>Clean it in your browser for free.</span>';
+    if (h1) h1.innerHTML = 'Hinglish Caption Generator.<br><span>Auto Subtitles for Reels, Shorts & Videos.</span>';
 
     const lead = hero.querySelector('.lead');
-    if (lead) lead.textContent = `Upload your Google Flow, Gemini or Veo video. Your file is read locally first. 100% free with no limits, no login, and no subscription.`;
+    if (lead) lead.textContent = `Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.`;
 
     const navBtn = document.querySelector('.navBtn');
-    if (navBtn) navBtn.textContent = 'Upload video';
+    if (navBtn) {
+      navBtn.textContent = 'Create Auto Subtitles →';
+      navBtn.style.background = '#10b981';
+      navBtn.style.color = '#ffffff';
+    }
 
     const toolTitle = document.getElementById('toolTitle');
     if (toolTitle) toolTitle.textContent = 'Drop your video here';
@@ -103,21 +107,26 @@
     const panel = document.createElement('section');
     panel.id = ROOT_ID;
     panel.className = 'gwConversionPanel';
-    panel.setAttribute('aria-label', 'Free video watermark remover information');
+    panel.setAttribute('aria-label', 'AutoCap Studio information');
     panel.innerHTML = `
       <div class="gwConversionTop">
         <div>
-          <span class="gwConversionKicker">100% FREE UTILITY · UNLIMITED PROCESSING</span>
-          <h2>Upload any video you want cleaned. <span>Instant free processing in your browser.</span></h2>
-          <p>Clean supported visible watermarks from Google Flow, Gemini and Veo videos directly on your device. Completely free forever with no payment, no account, and no hidden fees.</p>
+          <span class="gwConversionKicker">12 INDIAN LANGUAGES · 16 VIRAL CAPTION PRESETS</span>
+          <h2>Auto Subtitles & AI Video Studio <span>100% free in-browser processing.</span></h2>
+          <p>Transcribe 12 Indian languages with exact word-by-word timing, or remove watermarks and clean images directly on your device with no limits.</p>
         </div>
         <div class="gwConversionActions">
-          <a class="gwConversionPrimary" id="gwHeroUploadVideo" href="#tool">Choose video (Free)</a>
+          <a class="gwConversionPrimary" id="gwHeroUploadVideo" href="#subtitlesTab" onclick="document.getElementById('subtitlesTab')?.click();">⚡ Auto Subtitles (Free)</a>
           <a class="gwConversionSecondary" id="gwHeroPricing" href="#how">How it works</a>
         </div>
       </div>
       <div class="gwConversionTrust">
         <span>100% Free Forever</span>
+        <span>12 Indian Languages</span>
+        <span>16 Caption Styles</span>
+        <span>Local Browser Processing</span>
+      </div>
+    `;
         <span>Unlimited Videos</span>
         <span>Media stays on your device</span>
         <span>Zero Server Uploads</span>

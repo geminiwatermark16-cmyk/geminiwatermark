@@ -176,9 +176,9 @@ function setText(selectorOrElement, text) {
 }
 
 function patchUploadFirstCopy() {
-  setText('.hero .badge', '✦ 100% FREE · UNLIMITED VIDEOS & IMAGES');
-  setText('.hero .lead', 'Remove supported visible Gemini watermarks from images and videos in your browser. 100% free with no limits, no login, and no subscription.');
-  setText('#pricing .sectionLead', 'Both image and video watermark removal are completely free to use directly in your browser with zero limits.');
+  setText('.hero .badge', '✦ 12 Indian languages · Hinglish that stays Hinglish');
+  setText('.hero .lead', 'Most caption tools mangle code-mixed speech. AutoCap transcribes 12 Indian languages — Hindi, Hinglish, Tamil, Bengali, Telugu & more — then lets you edit every word and customize 16 viral presets before export.');
+  setText('#pricing .sectionLead', 'Auto Subtitles, video watermark removal, and image processing are completely free to use directly in your browser with zero limits.');
 
   const videoBadge = document.getElementById('videoBadge');
   if (videoBadge) videoBadge.textContent = 'Free';
