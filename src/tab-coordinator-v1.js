@@ -165,4 +165,20 @@
   });
 
   window.__GW_SWITCH_TAB__ = activateTab;
+
+  setTimeout(() => {
+    const params = new URLSearchParams(location.search);
+    const hash = location.hash;
+    if (params.get('mode') === 'video' || hash.includes('videoTab')) {
+      activateTab('videoTab');
+    } else if (params.get('mode') === 'image' || hash.includes('imageTab')) {
+      activateTab('imageTab');
+    } else if (params.get('mode') === 'batch' || hash.includes('batchTab')) {
+      activateTab('batchTab');
+    } else if (params.get('mode') === 'social' || hash.includes('socialTab') || hash.includes('linkTab')) {
+      activateTab('linkTab');
+    } else {
+      activateTab('subtitlesTab');
+    }
+  }, 120);
 })();

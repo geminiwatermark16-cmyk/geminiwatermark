@@ -1,6 +1,7 @@
 const app = document.querySelector('#app');
 
-app.innerHTML = `
+if (!document.getElementById('tool')) {
+  app.innerHTML = `
 <header class="nav wrap">
   <a class="brand" href="#top"><span>⚡</span> AutoCap <b>Studio</b></a>
   <nav>
@@ -68,19 +69,17 @@ app.innerHTML = `
     </section>
     <p class="privacy">● Media processing stays on your device. Cashfree handles checkout data when you upgrade.</p>
   </section>
-
-  <section class="metrics"><div class="wrap"><article><b>100%</b><span>Browser-side media</span></article><article><b>0</b><span>Media files stored</span></article><article><b>21</b><span>Videos free</span></article><article><b>₹99</b><span>Video plan</span></article></div></section>
-
-  <section id="how" class="section dark"><div class="wrap"><small>HOW IT WORKS</small><h2>Upload. Clean. Download.</h2><div class="steps"><article><b>01</b><h3>Upload</h3><p>Select a supported Gemini image or Veo video.</p></article><article><b>02</b><h3>Process</h3><p>The browser engine detects and reverses the supported visible watermark profile.</p></article><article><b>03</b><h3>Download</h3><p>Preview the result and save the cleaned media.</p></article></div></div></section>
-
-  <section id="pricing" class="section wrap"><small>PRICING</small><h2>Images free. 21 videos free.</h2><p class="sectionLead">Process your first 21 videos free on this browser. Video 22 onward requires the ₹99 plan.</p><div class="pricing"><article><span>IMAGES</span><div class="price"><b>₹0</b><em>forever</em></div><ul><li>Unlimited supported images</li><li>Automatic current + legacy image detection</li><li>Browser-side processing</li></ul><a href="#tool">Remove an image</a></article><article class="featured"><span>VIDEO</span><div class="price"><b>₹99</b><em>video plan</em></div><ul><li>First 21 videos free</li><li>1080×1920 story/reel support</li><li>New Gemini diamond + old Veo mode</li></ul><button id="buyPlan">Unlock video for ₹99</button></article></div></section>
-
-  <section id="faq" class="section faq wrap"><small>FAQ</small><h2>Good to know.</h2><details open><summary>Why might a watermark remain?</summary><p>The remover targets supported Gemini/Veo visible watermark profiles. For videos, select “New Gemini diamond” for recent Gemini outputs or “Old Veo text” for older Veo clips.</p></details><details><summary>What video size works best?</summary><p>Most story/reel clips are 1080×1920 portrait, which is supported by the current Gemini diamond profile. The original video aspect ratio is preserved in the downloaded output.</p></details><details><summary>How do the 21 free videos work?</summary><p>Your first 21 successfully processed videos are free on this browser. The current quota is browser-based.</p></details><details><summary>Does this remove SynthID?</summary><p>No. This tool handles supported visible watermarks only and does not remove invisible provenance or SynthID.</p></details></section>
 </main>
-<footer><div class="wrap"><b>✦ geminiwatermark.space</b><span>Independent utility · © 2026</span></div></footer>
-
-<div id="payModal" class="modal hidden"><div class="modalCard"><button id="closeModal" class="close">×</button><span class="modalKicker">VIDEO PLAN</span><h2>Unlock video</h2><p>Your 21 free videos are used. Continue with the ₹99 video plan.</p><div class="payPrice"><b>₹99</b><span>one-time checkout</span></div><label>Mobile number<input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></label><label>Email <em>optional</em><input id="email" type="email" placeholder="you@example.com"></label><p id="checkoutMsg" class="checkoutMsg"></p><button id="payBtn" class="payBtn">Pay ₹99 with Cashfree</button><small>Plan unlocks only after Cashfree payment is verified on the server.</small></div></div>
 `;
+}
+
+if (!document.getElementById('payModal')) {
+  const modalDiv = document.createElement('div');
+  modalDiv.id = 'payModal';
+  modalDiv.className = 'modal hidden';
+  modalDiv.innerHTML = `<div class="modalCard"><button id="closeModal" class="close">×</button><span class="modalKicker">VIDEO PLAN</span><h2>Unlock video</h2><p>Your 21 free videos are used. Continue with the ₹99 video plan.</p><div class="payPrice"><b>₹99</b><span>one-time checkout</span></div><label>Mobile number<input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></label><label>Email <em>optional</em><input id="email" type="email" placeholder="you@example.com"></label><p id="checkoutMsg" class="checkoutMsg"></p><button id="payBtn" class="payBtn">Pay ₹99 with Cashfree</button><small>Plan unlocks only after Cashfree payment is verified on the server.</small></div>`;
+  document.body.appendChild(modalDiv);
+}
 
 const $ = (id) => document.getElementById(id);
 const FREE_VIDEO_LIMIT = 21;
